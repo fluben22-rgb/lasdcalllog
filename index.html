@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CRIME-STARS v4.4 - LASD LOG TERMINAL</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            background-color: #008080;
+            font-family: "Courier New", Courier, monospace;
+            color: #000;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #top-bar {
+            display: none;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: #c0c0c0;
+            border-bottom: 2px solid #000;
+            padding: 5px;
+            box-sizing: border-box;
+            z-index: 100;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .win-btn {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .win-btn:active {
+            border-color: #808080 #fff #fff #808080;
+        }
+
+        #auth-box,
+        #login-box,
+        #main-app {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            padding: 15px;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        #login-box {
+            display: none;
+        }
+
+        #main-app {
+            display: none;
+            width: 98vw;
+            height: 92vh;
+            margin-top: 35px;
+        }
+
+        .window-title {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 2px 5px;
+            font-weight: bold;
+            margin: -15px -15px 10px -15px;
+            font-size: 12px;
+        }
+
+        .form-area {
+            display: grid;
+            gap: 5px;
+            background: #d0d0d0;
+            padding: 8px;
+            border: 2px inset #fff;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select {
+            background: #fff;
+            border: 2px solid #808080;
+            font-size: 11px;
+            width: 100%;
+            box-sizing: border-box;
+            height: 22px;
+            padding: 0 4px;
+        }
+
+        input[readonly] {
+            background: #e0e0e0;
+            cursor: not-allowed;
+        }
+
+        .scroll-area {
+            height: 55vh;
+            overflow: auto;
+            border: 2px inset #fff;
+            background: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            table-layout: fixed;
+            cursor: pointer;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #c0c0c0;
+            border: 1px solid #808080;
+            padding: 4px;
+            font-size: 10px;
+            z-index: 10;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 2px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        label {
+            font-size: 10px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .now-btn {
+            height: 22px;
+            width: 45px;
+            font-size: 8px;
+            padding: 0;
+        }
+
+        .ride-along-section {
+            border-top: 1px dashed #808080;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .win-modal {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            padding: 15px;
+            box-shadow: 4px 4px 0px #000;
+            width: 420px;
+        }
+
+        #auth-error {
+            color: #a00;
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="auth-box" style="width:300px;">
+        <div class="window-title">SECURE SYSTEM ACCESS</div>
+        <label>EMAIL ADDRESS:</label>
+        <input type="text" id="auth-email" placeholder="user@lasd.org">
+        <label style="margin-top:8px;">PASSWORD:</label>
+        <input type="password" id="auth-pass">
+        <div id="auth-error">INVALID CREDENTIALS. ACCESS DENIED.</div>
+        <button class="win-btn" style="width:100%; margin-top:15px; height:30px;" onclick="doAuth()">LOGIN</button>
+    </div>
+
+    <div id="login-box" style="width:350px;">
+        <div class="window-title">CRIME-STARS v4.4 INITIALIZATION</div>
+        <label>ROLE:</label>
+        <select id="user-role" onchange="toggleLogonFields()">
+            <option value="Dispatcher">Dispatcher</option>
+            <option value="Deputy">Field Deputy</option>
+        </select>
+
+        <label>NAME / CALLSIGN:</label>
+        <input type="text" id="user-id" placeholder="267-B">
+        <label id="rank-label">RANK:</label>
+        <input type="text" id="user-rank" placeholder="DEPUTY / SGT">
+        <label>ASSIGNMENT:</label>
+        <input type="text" id="user-assignment" placeholder="Century / East LA">
+
+        <div id="tag-config-area">
+            <label>STARTING TAG #:</label>
+            <input type="number" id="tag-start" value="0">
+        </div>
+
+        <div id="ride-along-btn-area" class="hidden">
+            <button class="win-btn" style="margin-top:10px;" onclick="toggleRideAlong(true)">+ ADD RIDE ALONG / PARTNER</button>
+        </div>
+
+        <div id="ride-along-inputs" class="hidden ride-along-section">
+            <label>PARTNER NAME:</label>
+            <input type="text" id="ra-name">
+            <label>BADGE #:</label>
+            <input type="text" id="ra-badge">
+            <label>RANK:</label>
+            <input type="text" id="ra-rank">
+            <button class="win-btn" style="margin-top:5px;" onclick="toggleRideAlong(false)">REMOVE PARTNER</button>
+        </div>
+
+        <button class="win-btn" style="width:100%; margin-top:15px; height:35px; background:#d0d0d0;" onclick="doLogin()">INITIALIZE TERMINAL</button>
+    </div>
+
+    <div id="modal-overlay" class="modal-overlay">
+        <div id="sig-modal" class="win-modal">
+            <div class="window-title">OFFICIAL LOG VALIDATION</div>
+            <div style="padding:10px;">
+                <label>NAME OF PERSON SIGNING OFF:</label>
+                <input type="text" id="sig-name">
+                <label style="margin-top:8px;">RANK OF PERSON SIGNING OFF:</label>
+                <input type="text" id="sig-rank">
+                <label style="margin-top:8px;">BUREAU OF PERSON ASSIGNED TO SIGNING OFF:</label>
+                <input type="text" id="sig-bureau">
+                <label style="margin-top:8px;">TIME AND DATE OF PERSON SIGNING OFF:</label>
+                <input type="text" id="sig-datetime">
+
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="win-btn" style="flex:1; height:30px; color:#008000;" onclick="confirmSignOff()">VALIDATE & PRINT</button>
+                    <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('modal-overlay')">CANCEL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="user-data-overlay" class="modal-overlay">
+        <div class="win-modal">
+            <div class="window-title">UPDATE USER DATA</div>
+            <div style="padding:10px;">
+                <label>NEW DEPUTY CALLSIGN:</label>
+                <input type="text" id="edit-user-id">
+                <label style="margin-top:8px;">NEW DEPUTY ASSIGNMENT:</label>
+                <input type="text" id="edit-user-assignment">
+                <label style="margin-top:8px;">NEW DEPUTY RANK:</label>
+                <input type="text" id="edit-user-rank">
+
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="win-btn" style="flex:1; height:30px; color:#000080;" onclick="updateUserData()">UPDATE</button>
+                    <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('user-data-overlay')">CANCEL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="quick-status-overlay" class="modal-overlay">
+        <div class="win-modal" style="width: 350px;">
+            <div class="window-title" id="qs-title">QUICK STATUS ENTRY</div>
+            <div style="padding:10px;">
+                <div id="qs-loc-container">
+                    <label>LOCATION:</label>
+                    <input type="text" id="qs-loc">
+                </div>
+                <label style="margin-top:8px;">DETAILS / NARRATIVE:</label>
+                <input type="text" id="qs-notes">
+
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="win-btn" style="flex:1; height:30px; color:#008000;" onclick="submitQuickStatus()">COMMIT</button>
+                    <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('quick-status-overlay')">CANCEL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="top-bar">
+        <div id="cmd-container" style="display:flex; gap:5px; background:#000; padding:3px; border:2px inset #fff;">
+            <span style="color:#0f0; font-size:11px;">TAG#</span>
+            <input type="text" id="edit-tag-num" style="background:transparent; color:#0f0; border:none; width:50px; outline:none;">
+            <button class="win-btn" onclick="loadTagForEdit()">LOAD</button>
+            <button class="win-btn" onclick="updateEntry()" style="color:#000080">UPDATE</button>
+        </div>
+        <button class="win-btn" onclick="openUserDataModal()">CHANGE USER DATA</button>
+        <button class="win-btn" onclick="clearInputFields()">CLEAR FIELDS</button>
+        <div id="status-btns" style="display:flex; gap:5px; margin-left:10px; border-left:1px solid #808080; padding-left:10px;">
+            <button class="win-btn" onclick="quickStatus('909')" style="background:#ccffcc;">909</button>
+            <button class="win-btn" onclick="quickStatus('C6')" style="background:#ccffcc;">C6</button>
+            <button class="win-btn" onclick="quickStatus('10-98')" style="background:#ccffcc;">10-98</button>
+            <button class="win-btn" onclick="quickStatus('10-6')" style="background:#ffffcc;">10-6</button>
+            <button class="win-btn" onclick="quickStatus('10-7')" style="background:#e0e0e0;">10-7</button>
+        </div>
+        <div style="flex-grow:1"></div>
+        <button class="win-btn" onclick="triggerPrintFlow()" style="background:#ffdbdb;">PRINT DAILY LOG</button>
+        <button class="win-btn" onclick="handleLogoff()">LOGOFF</button>
+    </div>
+
+    <div id="main-app">
+        <div class="window-title">LASD ACTIVITY SYSTEM - [LOGGED: <span id="stat-user"></span>]</div>
+
+        <div class="form-area" id="input-form">
+            <div id="field-unit"><label>PRIMARY UNIT</label><input type="text" id="f-unit"></div>
+            <div class="dispatch-only"><label>CALL TYPE</label><select id="f-type">
+                    <option value="SIC">SIC</option>
+                    <option value="911">911</option>
+                    <option value="DESK">DESK</option>
+                    <option value="OTHER">OTHER</option>
+                </select></div>
+            <div class="dispatch-only"><label>CALL CODE</label><input type="text" id="f-callcode"></div>
+            <div id="field-loc"><label>LOCATION/STATION</label><input type="text" id="f-loc"></div>
+            <div id="field-start"><label>TIME START</label>
+                <div style="display:flex;"><input type="text" id="f-start"><button class="win-btn now-btn dispatch-only" onclick="setNow('f-start')">NOW</button></div>
+            </div>
+            <div id="field-end"><label>TIME END</label>
+                <div style="display:flex;"><input type="text" id="f-end" value="####"><button class="win-btn now-btn" onclick="setNow('f-end')">NOW</button></div>
+            </div>
+            <div id="field-report" class="deputy-only hidden"><label>REPORT # (URN)</label><input type="text" id="f-report" placeholder="Optional"></div>
+            <div id="field-notes"><label>ACTIVITY NARRATIVE / NOTES</label><input type="text" id="f-notes"></div>
+            <div class="dispatch-only"><label>CODE</label><select id="f-code">
+                    <option value="NONE">NONE</option>
+                    <option value="ROUTINE">ROUTINE</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                </select></div>
+            <div class="dispatch-only"><label>OTHER HANDLE</label><input type="text" id="f-handle"></div>
+            <div class="dispatch-only" style="display:flex; gap:10px; align-items:center; padding-top:10px;">
+                <label style="display:inline-flex; align-items:center; gap:3px;">CMP <input type="checkbox" id="f-cmplt" style="width:15px; height:15px;"></label>
+                <label style="display:inline-flex; align-items:center; gap:3px;">SAM <input type="checkbox" id="f-sam" style="width:15px; height:15px;"></label>
+                <label style="display:inline-flex; align-items:center; gap:3px;">AERO <input type="checkbox" id="f-aero" style="width:15px; height:15px;"></label>
+            </div>
+        </div>
+
+        <button class="win-btn" style="width:100%; height:30px; margin-bottom:5px; background:#c0c0c0;" onclick="addEntry()">COMMIT TO DAILY LOG</button>
+
+        <div class="scroll-area">
+            <table id="log-table">
+                <thead id="log-head"></thead>
+                <tbody id="log-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <audio id="audio-player" style="display:none;"></audio>
+
+    <script>
+        const SOUND_URLS = {
+            logon: 'https://od.lk/d/MzRfMTAwMjE2MDY5Xw/chimes.mp3',
+            newEntry: 'https://od.lk/d/MzRfMTAwMjE2MDY4Xw/ding.mp3',
+            logout: 'https://od.lk/d/MzRfMTAwMjE2MDcxXw/notify.mp3',
+            export: 'https://od.lk/d/MzRfMTAwMjE2MDcwXw/print-complete.mp3'
+        };
+
+        function playSound(type) {
+            const url = SOUND_URLS[type];
+            if (!url) return;
+            let audio = document.getElementById('audio-player');
+            if (!audio) {
+                audio = document.createElement('audio');
+                audio.id = 'audio-player';
+                document.body.appendChild(audio);
+            }
+            audio.pause();
+            audio.src = url;
+            audio.load();
+            audio.play().catch(e => console.warn("Audio blocked:", e));
+        }
+
+        let tagCounter = null;
+        let logs = [];
+        let sessionData = {
+            user: "",
+            rank: "",
+            role: "",
+            assignment: "",
+            rideAlong: false,
+            raName: "",
+            raBadge: "",
+            raRank: "",
+            signOff: null
+        };
+        const {
+            jsPDF
+        } = window.jspdf;
+
+        function doAuth() {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            const err = document.getElementById('auth-error');
+            if ((email === "admin@lasd.org" && pass === "admin") || (email === "landrews@lasd.org" && pass === "36931")) {
+                document.getElementById('auth-box').style.display = 'none';
+                document.getElementById('login-box').style.display = 'block';
+            } else {
+                err.style.display = 'block';
+            }
+        }
+
+        function toggleLogonFields() {
+            const isDeputy = document.getElementById('user-role').value === "Deputy";
+            document.getElementById('tag-config-area').classList.toggle('hidden', isDeputy);
+            document.getElementById('ride-along-btn-area').classList.toggle('hidden', !isDeputy);
+            document.getElementById('rank-label').innerText = isDeputy ? "RANK (REQUIRED):" : "RANK:";
+        }
+
+        function toggleRideAlong(show) {
+            sessionData.rideAlong = show;
+            document.getElementById('ride-along-inputs').classList.toggle('hidden', !show);
+            document.getElementById('ride-along-btn-area').classList.toggle('hidden', show);
+        }
+
+        function setNow(id) {
+            const now = new Date();
+            document.getElementById(id).value = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function openUserDataModal() {
+            document.getElementById('edit-user-id').value = sessionData.user;
+            document.getElementById('edit-user-assignment').value = sessionData.assignment;
+            document.getElementById('edit-user-rank').value = sessionData.rank;
+            document.getElementById('user-data-overlay').style.display = 'flex';
+        }
+
+        function updateUserData() {
+            sessionData.user = document.getElementById('edit-user-id').value;
+            sessionData.assignment = document.getElementById('edit-user-assignment').value;
+            sessionData.rank = document.getElementById('edit-user-rank').value;
+
+            // Update UI
+            document.getElementById('stat-user').innerText = `${sessionData.rank} ${sessionData.user}`;
+            if (sessionData.role === "Deputy") {
+                document.getElementById('f-unit').value = sessionData.user;
+            }
+            closeModal('user-data-overlay');
+        }
+
+        function clearInputFields() {
+            const fields = ['f-loc', 'f-notes', 'f-callcode', 'f-handle', 'f-report', 'f-start'];
+            fields.forEach(f => {
+                const el = document.getElementById(f);
+                if (el) el.value = "";
+            });
+            document.getElementById('f-end').value = "####";
+            ['f-cmplt', 'f-sam', 'f-aero'].forEach(c => {
+                const el = document.getElementById(c);
+                if (el) el.checked = false;
+            });
+        }
+
+        function confirmSignOff() {
+            const name = document.getElementById('sig-name').value;
+            const rank = document.getElementById('sig-rank').value;
+            if (!name || !rank) return alert("SIGNATURE NAME AND RANK ARE REQUIRED.");
+            sessionData.signOff = {
+                name,
+                rank,
+                bureau: document.getElementById('sig-bureau').value,
+                time: document.getElementById('sig-datetime').value
+            };
+            closeModal('modal-overlay');
+            exportPDF();
+        }
+
+        function doLogin() {
+            const userId = document.getElementById('user-id').value;
+            const userRank = document.getElementById('user-rank').value;
+            const userAsgn = document.getElementById('user-assignment').value;
+            const role = document.getElementById('user-role').value;
+
+            if (!userId) return alert("NAME / CALLSIGN IS REQUIRED.");
+            if (role === "Deputy" && !userRank) return alert("RANK IS REQUIRED FOR FIELD DEPUTIES.");
+
+            sessionData.user = userId;
+            sessionData.rank = userRank || "DISPATCHER";
+            sessionData.assignment = userAsgn || "N/A";
+            sessionData.role = role;
+
+            if (sessionData.rideAlong) {
+                sessionData.raName = document.getElementById('ra-name').value;
+                sessionData.raBadge = document.getElementById('ra-badge').value;
+                sessionData.raRank = document.getElementById('ra-rank').value;
+            }
+
+            const dOnly = document.querySelectorAll('.dispatch-only');
+            const depOnly = document.querySelectorAll('.deputy-only');
+
+            if (sessionData.role === "Deputy") {
+                tagCounter = "";
+                dOnly.forEach(el => el.classList.add('hidden'));
+                depOnly.forEach(el => el.classList.remove('hidden'));
+                document.getElementById('f-unit').value = sessionData.user;
+                document.getElementById('f-unit').readOnly = true;
+                document.getElementById('input-form').style.gridTemplateColumns = "100px 1fr 80px 80px 120px";
+                document.getElementById('field-notes').style.gridColumn = "span 5";
+                document.getElementById('log-head').innerHTML = `<tr><th>UNIT</th><th>LOCATION</th><th>START</th><th>END</th><th>REPORT #</th><th>NARRATIVE</th></tr>`;
+            } else {
+                tagCounter = parseInt(document.getElementById('tag-start').value);
+                dOnly.forEach(el => el.classList.remove('hidden'));
+                depOnly.forEach(el => el.classList.add('hidden'));
+                document.getElementById('f-unit').readOnly = false;
+                document.getElementById('input-form').style.gridTemplateColumns = "repeat(6, 1fr)";
+                document.getElementById('field-notes').style.gridColumn = "span 3";
+                document.getElementById('log-head').innerHTML = `<tr><th>TAG</th><th>UNIT</th><th>TYPE</th><th>CODE</th><th>LOCATION</th><th>START</th><th>END</th><th>NOTES</th><th>RESP</th><th>CMP</th><th>SAM</th><th>AERO</th></tr>`;
+            }
+
+            document.getElementById('stat-user').innerText = `${sessionData.rank} ${sessionData.user}`;
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('top-bar').style.display = 'flex';
+            document.getElementById('main-app').style.display = 'block';
+            playSound('logon');
+        }
+
+        function handleLogoff() {
+            if (confirm("LOGOFF TERMINAL?")) {
+                playSound('logout');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            }
+        }
+
+        function addEntry() {
+            const entry = {
+                tag: tagCounter,
+                unit: document.getElementById('f-unit').value,
+                type: sessionData.role === "Dispatcher" ? document.getElementById('f-type').value : "SIC",
+                callcode: sessionData.role === "Dispatcher" ? document.getElementById('f-callcode').value : "",
+                loc: document.getElementById('f-loc').value,
+                start: document.getElementById('f-start').value || "0000",
+                end: document.getElementById('f-end').value,
+                report: sessionData.role === "Deputy" ? document.getElementById('f-report').value : "",
+                notes: document.getElementById('f-notes').value,
+                code: sessionData.role === "Dispatcher" ? document.getElementById('f-code').value : "NONE",
+                handle: sessionData.role === "Dispatcher" ? document.getElementById('f-handle').value : "",
+                cmplt: document.getElementById('f-cmplt')?.checked || false,
+                sam: document.getElementById('f-sam')?.checked || false,
+                aero: document.getElementById('f-aero')?.checked || false
+            };
+            logs.unshift(entry);
+            if (typeof tagCounter === 'number') {
+                tagCounter++;
+            }
+            renderTable();
+            playSound('newEntry');
+            clearInputFields();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('log-body');
+            tbody.innerHTML = "";
+            logs.forEach(log => {
+                const row = tbody.insertRow();
+                row.ondblclick = () => {
+                    document.getElementById('edit-tag-num').value = log.tag;
+                    loadTagForEdit();
+                };
+                if (sessionData.role === "Deputy") {
+                    row.innerHTML = `<td>${log.unit}</td><td>${log.loc}</td><td>${log.start}</td><td>${log.end}</td><td>${log.report || '---'}</td><td>${log.notes}</td>`;
+                } else {
+                    row.innerHTML = `<td>${log.tag}</td><td>${log.unit}</td><td>${log.type}</td><td>${log.callcode}</td><td>${log.loc}</td><td>${log.start}</td><td>${log.end}</td><td>${log.notes}</td><td>${log.code}</td><td>${log.cmplt ? '✓' : ''}</td><td>${log.sam ? '✓' : ''}</td><td>${log.aero ? '✓' : ''}</td>`;
+                }
+            });
+        }
+
+        function loadTagForEdit() {
+            const entry = logs.find(l => String(l.tag) === String(document.getElementById('edit-tag-num').value));
+            if (!entry) return;
+            document.getElementById('f-unit').value = entry.unit;
+            document.getElementById('f-loc').value = entry.loc;
+            document.getElementById('f-start').value = entry.start;
+            document.getElementById('f-end').value = entry.end;
+            document.getElementById('f-notes').value = entry.notes;
+            if (document.getElementById('f-cmplt')) document.getElementById('f-cmplt').checked = entry.cmplt;
+            if (document.getElementById('f-sam')) document.getElementById('f-sam').checked = entry.sam;
+            if (document.getElementById('f-aero')) document.getElementById('f-aero').checked = entry.aero;
+        }
+
+        function updateEntry() {
+            const index = logs.findIndex(l => String(l.tag) === String(document.getElementById('edit-tag-num').value));
+            if (index === -1) return;
+            logs[index] = {
+                ...logs[index],
+                unit: document.getElementById('f-unit').value,
+                loc: document.getElementById('f-loc').value,
+                start: document.getElementById('f-start').value,
+                end: document.getElementById('f-end').value,
+                notes: document.getElementById('f-notes').value,
+                cmplt: document.getElementById('f-cmplt')?.checked || false,
+                sam: document.getElementById('f-sam')?.checked || false,
+                aero: document.getElementById('f-aero')?.checked || false
+            };
+            renderTable();
+        }
+
+        function triggerPrintFlow() {
+            const logoUrl = 'https://upload.wikimedia.org/wikipedia/commons/4/45/Badge_of_the_Sheriff_of_Los_Angeles_County.png';
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.src = logoUrl;
+            img.onload = function() {
+                window.lasdLogoImg = img;
+                if (sessionData.role === "Deputy") {
+                    document.getElementById('sig-datetime').value = new Date().toLocaleString();
+                    document.getElementById('modal-overlay').style.display = 'flex';
+                } else {
+                    exportPDF();
+                }
+            };
+        }
+
+        function exportPDF() {
+            playSound('export');
+            const doc = new jsPDF({
+                orientation: "landscape"
+            });
+            const totalPagesExp = "{total_pages_count_string}";
+            const date = new Date().toLocaleDateString();
+
+            const addHeader = (data) => {
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageNum = doc.internal.getNumberOfPages();
+                if (sessionData.role === "Deputy") {
+                    if (window.lasdLogoImg) {
+                        doc.addImage(window.lasdLogoImg, 'PNG', 10, 5, 18, 22);
+                    }
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(16);
+                    doc.text(["DEPUTY'S DAILY ACTIVITY LOG", `LOGS FOR ${date}`], 32, 14);
+                } else {
+                    doc.setFont("courier", "bold");
+                    doc.setFontSize(12);
+                    doc.text(`DISPATCH CALL LOGS - ${date}`, 14, 12);
+                }
+                doc.setFontSize(10);
+                doc.text(`Page ${pageNum} of ${totalPagesExp}`, pageWidth - 45, 14);
+            };
+
+            if (sessionData.role === "Deputy") {
+                doc.autoTable({
+                    startY: 28,
+                    head: [
+                        ['REPORTING OFFICER', 'RANK', 'ASSIGNMENT', 'PARTNER', 'BADGE #', 'DATE']
+                    ],
+                    body: [
+                        [sessionData.user, sessionData.rank, sessionData.assignment, sessionData.rideAlong ? sessionData.raName : "NONE", sessionData.rideAlong ? sessionData.raBadge : "N/A", date]
+                    ],
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [128, 128, 128]
+                    },
+                    styles: {
+                        font: 'courier'
+                    },
+                    didDrawPage: addHeader
+                });
+
+                const tableData = logs.slice().reverse().map(l => [l.unit, l.loc, l.start, l.end, l.report || "N/A", l.notes]);
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 5,
+                    head: [
+                        ['UNIT', 'LOCATION', 'START', 'END', 'REPORT #', 'NOTES']
+                    ],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [128, 128, 128]
+                    },
+                    styles: {
+                        font: 'courier',
+                        fontSize: 8
+                    },
+                    columnStyles: {
+                        5: {
+                            cellWidth: 90
+                        }
+                    },
+                    didDrawPage: addHeader
+                });
+            } else {
+                const tableData = logs.slice().reverse().map(l => [l.unit, l.type, l.callcode, l.loc, l.start, l.end, l.notes, l.code, l.handle, l.cmplt ? 'Y' : 'N', l.sam ? 'Y' : 'N', l.aero ? 'Y' : 'N', l.tag]);
+                doc.autoTable({
+                    startY: 25,
+                    head: [
+                        ['UNIT', 'TYPE', 'CODE', 'LOCATION', 'START', 'END', 'NOTES', 'RESP', 'HANDLE', 'CMP', 'SAM', 'AERO', 'TAG']
+                    ],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [128, 128, 128]
+                    },
+                    styles: {
+                        font: 'courier',
+                        fontSize: 7
+                    },
+                    didDrawPage: addHeader
+                });
+            }
+
+            if (sessionData.signOff) {
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 10,
+                    head: [
+                        ['OFFICIAL VALIDATION / SIGN-OFF', 'RANK', 'BUREAU / STATION', 'TIMESTAMP']
+                    ],
+                    body: [
+                        [
+                            sessionData.signOff.name.toUpperCase(),
+                            sessionData.signOff.rank.toUpperCase(),
+                            sessionData.signOff.bureau.toUpperCase(),
+                            sessionData.signOff.time
+                        ]
+                    ],
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [0, 0, 128]
+                    },
+                    styles: {
+                        font: 'courier',
+                        fontSize: 9,
+                        cellPadding: 3
+                    },
+                    didDrawPage: addHeader
+                });
+            }
+
+            if (typeof doc.putTotalPages === 'function') {
+                doc.putTotalPages(totalPagesExp);
+            }
+            doc.save(`LASD_LOG_${sessionData.user}_${date.replace(/\//g, '-')}.pdf`);
+        }
+
+        let currentQSCode = "";
+      
+        function quickStatus(code) {
+            currentQSCode = code;
+            document.getElementById('qs-title').innerText = `QUICK STATUS: ${code}`;
+
+            document.getElementById('qs-loc').value = document.getElementById('f-loc').value;
+            document.getElementById('qs-notes').value = "";
+
+            const locContainer = document.getElementById('qs-loc-container');
+            if (code === '10-6' || code === '10-7' || code === '10-98') {
+                locContainer.style.display = 'none';
+            } else {
+                locContainer.style.display = 'block';
+            }
+
+            document.getElementById('quick-status-overlay').style.display = 'flex';
+            document.getElementById('qs-notes').focus();
+        }
+
+        function submitQuickStatus() {
+            const loc = document.getElementById('qs-loc').value;
+            const notes = document.getElementById('qs-notes').value;
+
+            setNow('f-start');
+            document.getElementById('f-end').value = (currentQSCode === '10-98') ?
+                new Date().getHours().toString().padStart(2, '0') + new Date().getMinutes().toString().padStart(2, '0') : "####";
+
+            document.getElementById('f-loc').value = loc;
+            document.getElementById('f-notes').value = `${currentQSCode}${notes ? ' - ' + notes : ''}`;
+
+            closeModal('quick-status-overlay');
+            addEntry();
+        }
+    </script>
+</body>
+
+</html>
