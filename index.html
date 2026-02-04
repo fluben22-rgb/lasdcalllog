@@ -388,8 +388,8 @@
         <button class="win-btn" onclick="clearInputFields()">CLEAR FIELDS</button>
         <div id="status-btns" style="display:flex; gap:5px; margin-left:10px; border-left:1px solid #808080; padding-left:10px;">
             <button class="win-btn" onclick="quickStatus('909')" style="background:#ccffcc;">909</button>
-            <button class="win-btn" onclick="quickStatus('C6')" style="background:#ccffcc;">C6</button>
-            <button class="win-btn" onclick="quickStatus('10-98')" style="background:#ccffcc;">10-98</button>
+            <button class="win-btn" onclick="quickStatus('10-8')" style="background:#ccffcc;">10-8</button>
+            <button class="win-btn" onclick="quickStatus('10-97')" style="background:#ffffcc;">10-97</button>
             <button class="win-btn" onclick="quickStatus('10-6')" style="background:#ffffcc;">10-6</button>
             <button class="win-btn" onclick="quickStatus('10-7')" style="background:#e0e0e0;">10-7</button>
         </div>
@@ -412,7 +412,7 @@
             <div class="dispatch-only"><label>CALL CODE</label><input type="text" id="f-callcode"></div>
             <div id="field-loc"><label>LOCATION/STATION</label><input type="text" id="f-loc"></div>
             <div id="field-start"><label>TIME START</label>
-                <div style="display:flex;"><input type="text" id="f-start"><button class="win-btn now-btn dispatch-only" onclick="setNow('f-start')">NOW</button></div>
+                <div style="display:flex;"><input type="text" id="f-start"><button class="win-btn now-btn" onclick="setNow('f-start')">NOW</button></div>
             </div>
             <div id="field-end"><label>TIME END</label>
                 <div style="display:flex;"><input type="text" id="f-end" value="####"><button class="win-btn now-btn" onclick="setNow('f-end')">NOW</button></div>
@@ -954,7 +954,7 @@
             document.getElementById('qs-notes').value = "";
 
             const locContainer = document.getElementById('qs-loc-container');
-            if (code === '10-6' || code === '10-7' || code === '10-98') {
+            if (code === '10-6' || code === '10-7' || code === '10-8') {
                 locContainer.style.display = 'none';
             } else {
                 locContainer.style.display = 'block';
@@ -970,7 +970,7 @@
             const notes = document.getElementById('qs-notes').value;
 
             setNow('f-start');
-            document.getElementById('f-end').value = (currentQSCode === '10-98') ?
+            document.getElementById('f-end').value = (currentQSCode === '10-8') ?
                 new Date().getHours().toString().padStart(2, '0') + new Date().getMinutes().toString().padStart(2, '0') : "####";
 
             document.getElementById('f-loc').value = loc;
