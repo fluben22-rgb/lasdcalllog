@@ -1,984 +1,1353 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8">
-    <title>CRIME-STARS v4.4 - LASD LOG TERMINAL</title>
+    <title>CRIME-STARS v4.5 - LASD LOG TERMINAL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            background-color: #008080;
-            font-family: "Courier New", Courier, monospace;
-            color: #000;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+      body {
+        background-color: #008080;
+        font-family: "Courier New", Courier, monospace;
+        color: #000;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
 
-        #top-bar {
-            display: none;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: #c0c0c0;
-            border-bottom: 2px solid #000;
-            padding: 5px;
-            box-sizing: border-box;
-            z-index: 100;
-            gap: 10px;
-            align-items: center;
-        }
+      #top-bar, #top-bar-calls {
+        display: none;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background: #c0c0c0;
+        border-bottom: 2px solid #000;
+        padding: 5px;
+        box-sizing: border-box;
+        z-index: 100;
+        gap: 10px;
+        align-items: center;
+      }
 
-        .win-btn {
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #fff #808080 #808080 #fff;
-            padding: 2px 8px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
-        }
+      .win-btn {
+        background: #c0c0c0;
+        border: 2px solid;
+        border-color: #fff #808080 #808080 #fff;
+        padding: 2px 8px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: bold;
+      }
 
-        .win-btn:active {
-            border-color: #808080 #fff #fff #808080;
-        }
+      .win-btn:active { border-color: #808080 #fff #fff #808080; }
 
-        #auth-box,
-        #login-box,
-        #main-app {
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #fff #808080 #808080 #fff;
-            padding: 15px;
-            box-shadow: 4px 4px 0px #000;
-        }
+      #auth-box,
+      #login-box,
+      #main-app {
+        background: #c0c0c0;
+        border: 2px solid;
+        border-color: #fff #808080 #808080 #fff;
+        padding: 15px;
+        box-shadow: 4px 4px 0px #000;
+      }
 
-        #login-box {
-            display: none;
-        }
-        
-        /* log table styles */
-        
-        #log-table {
-            table-layout: fixed;
-            width: 100%;
-            border-collapse: collapse;
-        }
+      #login-box { display: none; }
 
-        #log-table th:nth-child(1),
-        #log-table td:nth-child(1) {
-            width: 5ch !important;
-        }
+      /* log table styles */
+      #log-table {
+        table-layout: fixed;
+        width: 100%;
+        border-collapse: collapse;
+      }
 
-        #log-table th:nth-child(2),
-        #log-table td:nth-child(2) {
-            width: 9ch !important;
-        }
+      #log-table th:nth-child(1),
+      #log-table td:nth-child(1) {
+        width: 5ch !important;
+      }
 
-        #log-table th:nth-child(3),
-        #log-table td:nth-child(3) {
-            width: 7ch !important;
-        }
+      #log-table th:nth-child(2),
+      #log-table td:nth-child(2) {
+        width: 9ch !important;
+      }
 
-        #log-table th:nth-child(4),
-        #log-table td:nth-child(4) {
-            width: 6ch !important;
-        }
+      #log-table th:nth-child(3),
+      #log-table td:nth-child(3) {
+        width: 7ch !important;
+      }
 
-        #log-table th:nth-child(5),
-        #log-table td:nth-child(5) {
-            width: 35ch !important;
-            text-align: left;
-        }
+      #log-table th:nth-child(4),
+      #log-table td:nth-child(4) {
+        width: 6ch !important;
+      }
 
-        #log-table th:nth-child(6),
-        #log-table td:nth-child(6),
-        #log-table th:nth-child(7),
-        #log-table td:nth-child(7) {
-            width: 6ch !important;
-        }
+      #log-table th:nth-child(5),
+      #log-table td:nth-child(5) {
+        width: 35ch !important;
+        text-align: left;
+      }
 
-        .col-notes {
-            width: auto !important;
-            white-space: normal !important;
-            word-wrap: break-word;
-            text-align: left !important;
-        }
+      #log-table th:nth-child(6),
+      #log-table td:nth-child(6),
+      #log-table th:nth-child(7),
+      #log-table td:nth-child(7) {
+        width: 6ch !important;
+      }
 
-        #log-table th:nth-child(9),
-        #log-table td:nth-child(9) {
-            width: 35ch !important;
-            text-align: left;
-        }
+      .col-notes {
+        width: auto !important;
+        white-space: normal !important;
+        word-wrap: break-word;
+        text-align: left !important;
+      }
 
-        #log-table th:nth-last-child(1),
-        #log-table td:nth-last-child(1),
-        #log-table th:nth-last-child(2),
-        #log-table td:nth-last-child(2),
-        #log-table th:nth-last-child(3),
-        #log-table td:nth-last-child(3) {
-            width: 4ch !important;
-        }
+      #log-table th:nth-child(9),
+      #log-table td:nth-child(9) {
+        width: 35ch !important;
+        text-align: left;
+      }
 
-        /* Expand the Notes column */
-        .col-notes {
-            width: auto !important;
-            white-space: normal !important;
-            /* Allows text wrapping if you want to see the whole note */
-            text-align: left !important;
-            min-width: 200px;
-        }
+      #log-table th:nth-last-child(1),
+      #log-table td:nth-last-child(1),
+      #log-table th:nth-last-child(2),
+      #log-table td:nth-last-child(2),
+      #log-table th:nth-last-child(3),
+      #log-table td:nth-last-child(3) {
+        width: 4ch !important;
+      }
 
-        /* Make the table scrollable horizontally if needed */
-        .scroll-area {
-            overflow-x: auto;
-        }
+      .col-notes {
+        width: auto !important;
+        white-space: normal !important;
+        text-align: left !important;
+        min-width: 200px;
+      }
 
-        #main-app {
-            display: none;
-            width: 98vw;
-            height: 92vh;
-            margin-top: 35px;
-        }
+      .scroll-area {
+        overflow-x: auto;
+      }
 
-        .window-title {
-            background: linear-gradient(90deg, #000080, #1084d0);
-            color: white;
-            padding: 2px 5px;
-            font-weight: bold;
-            margin: -15px -15px 10px -15px;
-            font-size: 12px;
-        }
+      #main-app, #main-app-calls {
+        display: none;
+        width: 98vw;
+        height: 92vh;
+        margin-top: 35px;
+      }
 
-        .form-area {
-            display: grid;
-            gap: 5px;
-            background: #d0d0d0;
-            padding: 8px;
-            border: 2px inset #fff;
-            margin-bottom: 5px;
-        }
+      .window-title {
+        background: linear-gradient(90deg, #000080, #1084d0);
+        color: white;
+        padding: 2px 5px;
+        font-weight: bold;
+        margin: -15px -15px 10px -15px;
+        font-size: 12px;
+      }
 
-        input,
-        select {
-            background: #fff;
-            border: 2px solid #808080;
-            font-size: 11px;
-            width: 100%;
-            box-sizing: border-box;
-            height: 22px;
-            padding: 0 4px;
-        }
+      .form-area {
+        display: grid;
+        gap: 5px;
+        background: #d0d0d0;
+        padding: 8px;
+        border: 2px inset #fff;
+        margin-bottom: 5px;
+      }
 
-        input[readonly] {
-            background: #e0e0e0;
-            cursor: not-allowed;
-        }
+      input,
+      select {
+        background: #fff;
+        border: 2px solid #808080;
+        font-size: 11px;
+        width: 100%;
+        box-sizing: border-box;
+        height: 22px;
+        padding: 0 4px;
+      }
 
-        .scroll-area {
-            height: 55vh;
-            overflow: auto;
-            border: 2px inset #fff;
-            background: #fff;
-        }
+      input[readonly] {
+        background: #e0e0e0;
+        cursor: not-allowed;
+      }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-            table-layout: fixed;
-            cursor: pointer;
-        }
+      .scroll-area {
+        height: 55vh;
+        overflow: auto;
+        border: 2px inset #fff;
+        background: #fff;
+      }
 
-        th {
-            position: sticky;
-            top: 0;
-            background: #c0c0c0;
-            border: 1px solid #808080;
-            padding: 4px;
-            font-size: 10px;
-            z-index: 10;
-        }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        table-layout: fixed;
+        cursor: pointer;
+      }
 
-        td {
-            border: 1px solid #ccc;
-            padding: 2px;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
-            text-align: center;
-        }
+      th {
+        position: sticky;
+        top: 0;
+        background: #c0c0c0;
+        border: 1px solid #808080;
+        padding: 4px;
+        font-size: 10px;
+        z-index: 10;
+      }
 
-        label {
-            font-size: 10px;
-            font-weight: bold;
-            display: block;
-        }
+      td {
+        border: 1px solid #ccc;
+        padding: 2px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        text-align: center;
+      }
 
-        .hidden {
-            display: none !important;
-        }
+      label {
+        font-size: 10px;
+        font-weight: bold;
+        display: block;
+      }
 
-        .now-btn {
-            height: 22px;
-            width: 45px;
-            font-size: 8px;
-            padding: 0;
-        }
+      .hidden {
+        display: none !important;
+      }
 
-        .ride-along-section {
-            border-top: 1px dashed #808080;
-            margin-top: 10px;
-            padding-top: 10px;
-        }
+      .now-btn {
+        height: 22px;
+        width: 45px;
+        font-size: 8px;
+        padding: 0;
+      }
 
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
+      .ride-along-section {
+        border-top: 1px dashed #808080;
+        margin-top: 10px;
+        padding-top: 10px;
+      }
 
-        .win-modal {
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #fff #808080 #808080 #fff;
-            padding: 15px;
-            box-shadow: 4px 4px 0px #000;
-            width: 420px;
-        }
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
 
-        #auth-error {
-            color: #a00;
-            font-size: 10px;
-            font-weight: bold;
-            margin-top: 10px;
-            display: none;
-            text-align: center;
-        }
+      .win-modal {
+        background: #c0c0c0;
+        border: 2px solid;
+        border-color: #fff #808080 #808080 #fff;
+        padding: 15px;
+        box-shadow: 4px 4px 0px #000;
+        width: 420px;
+      }
+
+      #auth-error {
+        color: #a00;
+        font-size: 10px;
+        font-weight: bold;
+        margin-top: 10px;
+        display: none;
+        text-align: center;
+      }
+      
+      /* animations */
+      #new-call {
+        background-color: #002200;
+        color: #ffffff !important; 
+        animation: flash-red 1s infinite; 
+      }   
+
+      #updated-call {
+        animation: flash-orange 2s ease-out;
+      }
+
+      @keyframes flash-red {
+        0% { background-color: black; }
+        50% { background-color: red; }
+        100% { background-color: black; }
+      }
+
+      @keyframes flash-orange {
+        0% { background-color: #ff8c00; color: black; }
+        50% { background-color: #442200; color: #ff8c00; }
+        100% { background-color: black; color: inherit; }
+      }
     </style>
-</head>
-
-<body>
-
+  </head>
+  <body>
+    <!-- actual login area -->
     <div id="auth-box" style="width:300px;">
-        <div class="window-title">SECURE SYSTEM ACCESS</div>
-        <label>EMAIL ADDRESS:</label>
-        <input type="text" id="auth-email" placeholder="user@lasd.org">
-        <label style="margin-top:8px;">PASSWORD:</label>
-        <input type="password" id="auth-pass">
-        <div id="auth-error">INVALID CREDENTIALS. ACCESS DENIED.</div>
-        <button class="win-btn" style="width:100%; margin-top:15px; height:30px;" onclick="doAuth()">LOGIN</button>
+      <div class="window-title">SECURE SYSTEM ACCESS</div>
+      <label>EMAIL ADDRESS:</label>
+      <input type="text" id="auth-email" placeholder="user@lasd.org">
+      <label style="margin-top:8px;">PASSWORD:</label>
+      <input type="password" id="auth-pass">
+      <div id="auth-error">INVALID CREDENTIALS. ACCESS DENIED.</div>
+      <button class="win-btn" style="width:100%; margin-top:15px; height:30px;" onclick="doAuth()">LOGIN</button>
     </div>
-
+    <!-- unit assignment area -->
     <div id="login-box" style="width:350px;">
-        <div class="window-title">CRIME-STARS v4.4 INITIALIZATION</div>
-        <label>ROLE:</label>
-        <select id="user-role" onchange="toggleLogonFields()">
-            <option value="Dispatcher">Dispatcher</option>
-            <option value="Deputy">Field Deputy</option>
-        </select>
-
-        <label>NAME / CALLSIGN:</label>
-        <input type="text" id="user-id" placeholder="267-B">
-        <label id="rank-label">RANK:</label>
-        <input type="text" id="user-rank" placeholder="DEPUTY">
-        <label>ASSIGNMENT:</label>
-        <input type="text" id="user-assignment" placeholder="PLM PATROL">
-
-        <div id="tag-config-area">
-            <label>STARTING TAG #:</label>
-            <input type="number" id="tag-start" value="0">
-        </div>
-
-        <div id="ride-along-btn-area" class="hidden">
-            <button class="win-btn" style="margin-top:10px;" onclick="toggleRideAlong(true)">+ ADD RIDE ALONG / PARTNER</button>
-        </div>
-
-        <div id="ride-along-inputs" class="hidden ride-along-section">
-            <label>PARTNER NAME:</label>
-            <input type="text" id="ra-name">
-            <label>BADGE #:</label>
-            <input type="text" id="ra-badge">
-            <label>RANK:</label>
-            <input type="text" id="ra-rank">
-            <button class="win-btn" style="margin-top:5px;" onclick="toggleRideAlong(false)">REMOVE PARTNER</button>
-        </div>
-
-        <button class="win-btn" style="width:100%; margin-top:15px; height:35px; background:#d0d0d0;" onclick="doLogin()">INITIALIZE TERMINAL</button>
+      <div class="window-title">CRIME-STARS v4.5 INITIALIZATION</div>
+      <label>ROLE:</label>
+      <select id="user-role" onchange="toggleLogonFields()">
+        <option value="Dispatcher">Dispatcher</option>
+        <option value="Deputy">Field Deputy</option>
+      </select>
+      <label>NAME / CALLSIGN:</label>
+      <input type="text" id="user-id" placeholder="267-B">
+      <label id="rank-label">RANK:</label>
+      <input type="text" id="user-rank" placeholder="DEPUTY">
+      <label>ASSIGNMENT:</label>
+      <input type="text" id="user-assignment" placeholder="PLM PATROL">
+      <div id="tag-config-area">
+        <label>STARTING TAG #:</label>
+        <input type="number" id="tag-start" value="0">
+      </div>
+      <div id="ride-along-btn-area" class="hidden">
+        <button class="win-btn" style="margin-top:10px;" onclick="toggleRideAlong(true)">+ ADD RIDE ALONG / PARTNER</button>
+      </div>
+      <div id="ride-along-inputs" class="hidden ride-along-section">
+        <label>PARTNER NAME:</label>
+        <input type="text" id="ra-name">
+        <label>BADGE #:</label>
+        <input type="text" id="ra-badge">
+        <label>RANK:</label>
+        <input type="text" id="ra-rank">
+        <button class="win-btn" style="margin-top:5px;" onclick="toggleRideAlong(false)">REMOVE PARTNER</button>
+      </div>
+      <button class="win-btn" style="width:100%; margin-top:15px; height:35px; background:#d0d0d0;" onclick="doLogin()">INITIALIZE TERMINAL</button>
     </div>
-
+    <!-- deputy log validation modal -->
     <div id="modal-overlay" class="modal-overlay">
-        <div id="sig-modal" class="win-modal">
-            <div class="window-title">OFFICIAL LOG VALIDATION</div>
-            <div style="padding:10px;">
-                <label>NAME OF PERSON SIGNING OFF:</label>
-                <input type="text" id="sig-name">
-                <label style="margin-top:8px;">RANK OF PERSON SIGNING OFF:</label>
-                <input type="text" id="sig-rank">
-                <label style="margin-top:8px;">BUREAU OF PERSON ASSIGNED TO SIGNING OFF:</label>
-                <input type="text" id="sig-bureau">
-                <label style="margin-top:8px;">TIME AND DATE OF PERSON SIGNING OFF:</label>
-                <input type="text" id="sig-datetime">
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button class="win-btn" style="flex:1; height:30px; color:#008000;" onclick="confirmSignOff()">VALIDATE & PRINT</button>
-                    <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('modal-overlay')">CANCEL</button>
-                </div>
-            </div>
+      <div id="sig-modal" class="win-modal">
+        <div class="window-title">OFFICIAL LOG VALIDATION</div>
+        <div style="padding:10px;">
+          <label>NAME OF PERSON SIGNING OFF:</label>
+          <input type="text" id="sig-name">
+          <label style="margin-top:8px;">RANK OF PERSON SIGNING OFF:</label>
+          <input type="text" id="sig-rank">
+          <label style="margin-top:8px;">BUREAU OF PERSON ASSIGNED TO SIGNING OFF:</label>
+          <input type="text" id="sig-bureau">
+          <label style="margin-top:8px;">TIME AND DATE OF PERSON SIGNING OFF:</label>
+          <input type="text" id="sig-datetime">
+          <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="win-btn" style="flex:1; height:30px; color:#008000;" onclick="confirmSignOff()">VALIDATE & PRINT</button>
+            <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('modal-overlay')">CANCEL</button>
+          </div>
         </div>
+      </div>
     </div>
-
+    <!-- user update modal -->
     <div id="user-data-overlay" class="modal-overlay">
-        <div class="win-modal">
-            <div class="window-title">UPDATE USER DATA</div>
-            <div style="padding:10px;">
-                <label>NEW DEPUTY CALLSIGN:</label>
-                <input type="text" id="edit-user-id">
-                <label style="margin-top:8px;">NEW DEPUTY ASSIGNMENT:</label>
-                <input type="text" id="edit-user-assignment">
-                <label style="margin-top:8px;">NEW DEPUTY RANK:</label>
-                <input type="text" id="edit-user-rank">
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button class="win-btn" style="flex:1; height:30px; color:#000080;" onclick="updateUserData()">UPDATE</button>
-                    <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('user-data-overlay')">CANCEL</button>
-                </div>
-            </div>
+      <div class="win-modal">
+        <div class="window-title">UPDATE USER DATA</div>
+        <div style="padding:10px;">
+          <label>NEW DEPUTY CALLSIGN:</label>
+          <input type="text" id="edit-user-id">
+          <label style="margin-top:8px;">NEW DEPUTY ASSIGNMENT:</label>
+          <input type="text" id="edit-user-assignment">
+          <label style="margin-top:8px;">NEW DEPUTY RANK:</label>
+          <input type="text" id="edit-user-rank">
+          <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="win-btn" style="flex:1; height:30px; color:#000080;" onclick="updateUserData()">UPDATE</button>
+            <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('user-data-overlay')">CANCEL</button>
+          </div>
         </div>
+      </div>
     </div>
-
+    <!-- quick status button modal -->
     <div id="quick-status-overlay" class="modal-overlay">
-        <div class="win-modal" style="width: 350px;">
-            <div class="window-title" id="qs-title">QUICK STATUS ENTRY</div>
-            <div style="padding:10px;">
-                <div id="qs-loc-container">
-                    <label>LOCATION:</label>
-                    <input type="text" id="qs-loc">
-                </div>
-                <label style="margin-top:8px;">DETAILS / NARRATIVE:</label>
-                <input type="text" id="qs-notes">
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button class="win-btn" style="flex:1; height:30px; color:#008000;" onclick="submitQuickStatus()">COMMIT</button>
-                    <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('quick-status-overlay')">CANCEL</button>
-                </div>
-            </div>
+      <div class="win-modal" style="width: 350px;">
+        <div class="window-title" id="qs-title">QUICK STATUS ENTRY</div>
+        <div style="padding:10px;">
+          <div id="qs-loc-container">
+            <label>LOCATION:</label>
+            <input type="text" id="qs-loc">
+          </div>
+          <label style="margin-top:8px;">DETAILS / NARRATIVE:</label>
+          <input type="text" id="qs-notes">
+          <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="win-btn" style="flex:1; height:30px; color:#008000;" onclick="submitQuickStatus()">COMMIT</button>
+            <button class="win-btn" style="flex:1; height:30px;" onclick="closeModal('quick-status-overlay')">CANCEL</button>
+          </div>
         </div>
+      </div>
     </div>
-
+    <!-- top bar area, for commands -->
     <div id="top-bar">
-        <div id="cmd-container" style="display:flex; gap:5px; background:#000; padding:3px; border:2px inset #fff;">
-            <span style="color:#0f0; font-size:11px;">TAG#</span>
-            <input type="text" id="edit-tag-num" style="background:transparent; color:#0f0; border:none; width:50px; outline:none;">
-            <button class="win-btn" onclick="loadTagForEdit()">LOAD</button>
-            <button class="win-btn" onclick="updateEntry()" style="color:#000080">UPDATE</button>
+      <div id="cmd-container" style="display:flex; gap:5px; background:#000; padding:3px; border:2px inset #fff;">
+        <span style="color:#0f0; font-size:11px;">TAG#</span>
+        <input type="text" id="edit-tag-num" style="background:transparent; color:#0f0; border:none; width:50px; outline:none;">
+        <button class="win-btn" onclick="loadTagForEdit()">LOAD</button>
+        <button class="win-btn" onclick="updateEntry()" style="color:#000080">UPDATE</button>
+      </div>
+      <button class="win-btn" onclick="openUserDataModal()">CHANGE USER DATA</button>
+      <button class="win-btn" onclick="clearInputFields()">CLEAR FIELDS</button>
+      <div id="status-btns" style="display:flex; gap:5px; margin-left:10px; border-left:1px solid #808080; padding-left:10px;">
+        <button class="win-btn" onclick="quickStatus('909')" style="background:#ccffcc;">909</button>
+        <button class="win-btn" onclick="quickStatus('10-8')" style="background:#ccffcc;">10-8</button>
+        <button class="win-btn" onclick="quickStatus('10-97')" style="background:#ffffcc;">10-97</button>
+        <button class="win-btn" onclick="quickStatus('10-6')" style="background:#ffffcc;">10-6</button>
+        <button class="win-btn" onclick="quickStatus('10-7')" style="background:#e0e0e0;">10-7</button>
+      </div>
+      <div style="flex-grow:1"></div>
+      <button class="win-btn" onclick="triggerPrintFlow()" style="background:#ffdbdb;">PRINT DAILY LOG</button>
+      <button class="win-btn" onclick="handleLogoff()">LOGOFF</button>
+    </div>
+    <!-- MAIN CONTENT AREA FOR DEPUTIES & DISPATCH -->
+    <div id="main-app">
+      <!-- fix this not showing on smaller displays correctly, its def in CSS rules -->
+      <div class="window-title">LASD ACTIVITY SYSTEM - [LOGGED: <span id="stat-user"></span>] </div>
+      <div class="form-area" id="input-form">
+        <div id="field-unit">
+          <label>PRIMARY UNIT</label>
+          <input type="text" id="f-unit">
         </div>
-        <button class="win-btn" onclick="openUserDataModal()">CHANGE USER DATA</button>
-        <button class="win-btn" onclick="clearInputFields()">CLEAR FIELDS</button>
-        <div id="status-btns" style="display:flex; gap:5px; margin-left:10px; border-left:1px solid #808080; padding-left:10px;">
-            <button class="win-btn" onclick="quickStatus('909')" style="background:#ccffcc;">909</button>
-            <button class="win-btn" onclick="quickStatus('10-8')" style="background:#ccffcc;">10-8</button>
-            <button class="win-btn" onclick="quickStatus('10-97')" style="background:#ffffcc;">10-97</button>
-            <button class="win-btn" onclick="quickStatus('10-6')" style="background:#ffffcc;">10-6</button>
-            <button class="win-btn" onclick="quickStatus('10-7')" style="background:#e0e0e0;">10-7</button>
+        <div class="dispatch-only">
+          <label>CALL TYPE</label>
+          <select id="f-type">
+            <option value="SIC">SIC</option>
+            <option value="911">911</option>
+            <option value="DESK">DESK</option>
+            <option value="OTHER">OTHER</option>
+          </select>
+        </div>
+        <div class="dispatch-only">
+          <label>CALL CODE</label>
+          <input type="text" id="f-callcode">
+        </div>
+        <div id="field-loc">
+          <label>LOCATION/STATION</label>
+          <input type="text" id="f-loc">
+        </div>
+        <div id="field-start">
+          <label>TIME START</label>
+          <div style="display:flex;">
+            <input type="text" id="f-start">
+            <button class="win-btn now-btn" onclick="setNow('f-start')">NOW</button>
+          </div>
+        </div>
+        <div id="field-end">
+          <label>TIME END</label>
+          <div style="display:flex;">
+            <input type="text" id="f-end" value="####">
+            <button class="win-btn now-btn" onclick="setNow('f-end')">NOW</button>
+          </div>
+        </div>
+        <div id="field-report" class="deputy-only hidden">
+          <label>REPORT # (URN)</label>
+          <input type="text" id="f-report" placeholder="Optional">
+        </div>
+        <div id="field-notes">
+          <label>ACTIVITY NARRATIVE / NOTES</label>
+          <input type="text" id="f-notes">
+        </div>
+        <div class="dispatch-only">
+          <label>CODE</label>
+          <select id="f-code">
+            <option value="NONE">NONE</option>
+            <option value="ROUTINE">ROUTINE</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </div>
+        <div class="dispatch-only">
+          <label>OTHER HANDLE</label>
+          <input type="text" id="f-handle">
+        </div>
+        <div class="dispatch-only" style="display:flex; gap:10px; align-items:center; padding-top:10px;">
+          <label style="display:inline-flex; align-items:center; gap:3px;">CMP <input type="checkbox" id="f-cmplt" style="width:15px; height:15px;">
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:3px;">SAM <input type="checkbox" id="f-sam" style="width:15px; height:15px;">
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:3px;">AERO <input type="checkbox" id="f-aero" style="width:15px; height:15px;">
+          </label>
+        </div>
+      </div>
+      <button class="win-btn" style="width:100%; height:30px; margin-bottom:5px; background:#c0c0c0;" onclick="addEntry()">COMMIT TO DAILY LOG</button>
+      <div class="scroll-area">
+        <table id="log-table">
+          <thead id="log-head"></thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- MAIN CONTENT AREA FOR CALL MONITORING -->
+    <div id="top-bar-calls">
+      <div style="display: flex; height: 32px; font-family: 'Courier New', Courier, monospace; background: #c0c0c0; padding: 2px; align-items: center;">
+        <div style="display: flex; width: 100%; max-width: 500px; height: 28px; background: black; border-top: 2px solid #808080; border-left: 2px solid #808080; border-right: 2px solid #fff; border-bottom: 2px solid #fff; overflow: hidden;">
+          <button onclick="processCmd()" style="height: 100%; padding: 0 15px; cursor: pointer; font-weight: bold; font-size: 11px; background: #c0c0c0; border: none; border-right: 2px solid #808080; color: black; outline: none;">SUBMIT</button>
+          <input type="text" id="myInput" placeholder="ENTER COMMAND..." style="flex-grow: 1; height: 100%; padding: 0 10px; background: transparent; color: #00ff00; border: none; font-family: 'Courier New', Courier, monospace; outline: none; text-transform: uppercase;" onkeydown="if(event.key === 'Enter') processCmd()">
         </div>
         <div style="flex-grow:1"></div>
-        <button class="win-btn" onclick="triggerPrintFlow()" style="background:#ffdbdb;">PRINT DAILY LOG</button>
-        <button class="win-btn" onclick="handleLogoff()">LOGOFF</button>
+      <button class="win-btn" onclick="handleLogoff()">LOGOFF</button>
+      </div>
     </div>
-
-    <div id="main-app">
-        <div class="window-title">LASD ACTIVITY SYSTEM - [LOGGED: <span id="stat-user"></span>]</div>
-
-        <div class="form-area" id="input-form">
-            <div id="field-unit"><label>PRIMARY UNIT</label><input type="text" id="f-unit"></div>
-            <div class="dispatch-only"><label>CALL TYPE</label><select id="f-type">
-                    <option value="SIC">SIC</option>
-                    <option value="911">911</option>
-                    <option value="DESK">DESK</option>
-                    <option value="OTHER">OTHER</option>
-                </select></div>
-            <div class="dispatch-only"><label>CALL CODE</label><input type="text" id="f-callcode"></div>
-            <div id="field-loc"><label>LOCATION/STATION</label><input type="text" id="f-loc"></div>
-            <div id="field-start"><label>TIME START</label>
-                <div style="display:flex;"><input type="text" id="f-start"><button class="win-btn now-btn" onclick="setNow('f-start')">NOW</button></div>
-            </div>
-            <div id="field-end"><label>TIME END</label>
-                <div style="display:flex;"><input type="text" id="f-end" value="####"><button class="win-btn now-btn" onclick="setNow('f-end')">NOW</button></div>
-            </div>
-            <div id="field-report" class="deputy-only hidden"><label>REPORT # (URN)</label><input type="text" id="f-report" placeholder="Optional"></div>
-            <div id="field-notes"><label>ACTIVITY NARRATIVE / NOTES</label><input type="text" id="f-notes"></div>
-            <div class="dispatch-only"><label>CODE</label><select id="f-code">
-                    <option value="NONE">NONE</option>
-                    <option value="ROUTINE">ROUTINE</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                </select></div>
-            <div class="dispatch-only"><label>OTHER HANDLE</label><input type="text" id="f-handle"></div>
-            <div class="dispatch-only" style="display:flex; gap:10px; align-items:center; padding-top:10px;">
-                <label style="display:inline-flex; align-items:center; gap:3px;">CMP <input type="checkbox" id="f-cmplt" style="width:15px; height:15px;"></label>
-                <label style="display:inline-flex; align-items:center; gap:3px;">SAM <input type="checkbox" id="f-sam" style="width:15px; height:15px;"></label>
-                <label style="display:inline-flex; align-items:center; gap:3px;">AERO <input type="checkbox" id="f-aero" style="width:15px; height:15px;"></label>
-            </div>
-        </div>
-
-        <button class="win-btn" style="width:100%; height:30px; margin-bottom:5px; background:#c0c0c0;" onclick="addEntry()">COMMIT TO DAILY LOG</button>
-
-        <div class="scroll-area">
-            <table id="log-table">
-                <thead id="log-head"></thead>
-                <tbody id="log-body"></tbody>
+    <div id="main-app-calls" style="background: black;">
+        <br />
+        <div class="window-title">PREVIEW WINDOW: LASD CALL MONITOR</div>
+        <div class="scroll-area" style="background-color: black; border: 0px; color: green;">
+            <table id="test-table">
+                <thead style="background-color: black !important; color: red;">
+                   <tr>
+                     <th style="width: 10ch;">ID</th> 
+                     <th style="width: 20ch;">CREATED AT</th> 
+                     <th style="width: 15ch;">TAG</th>
+                     <th style="width: 7ch;">UNIT</th>
+                     <th style="width: 10ch;">CALL TYPE</th>
+                     <th style="width: 10ch;">CALL CODE</th>
+                     <th style="width: 25ch;">LOCATION</th>
+                     <th style="width: 6ch;">START</th>
+                     <th style="width: 6ch;">END</th>
+                     <th style="width: 10ch;">REPORT NUM</th>
+                     <th style="width: auto;">NOTES</th> 
+                     <th style="width: 12ch;">HANDLE</th>
+                     <th style="width: 6ch;">CMPLT?</th>
+                     <th style="width: 5ch;">SAM?</th>
+                     <th style="width: 6ch;">AERO?</th>
+                     <th style="width: 10ch;">LOGGED BY</th>
+                   </tr>
+                </thead>
             </table>
         </div>
     </div>
-
     <!-- audio player for sounds, do not set display to ANYTHING else -->
     <audio id="audio-player" style="display:none;"></audio>
-
     <script>
-        const SOUND_URLS = {
-            logon: 'https://od.lk/d/MzRfMTAwMjE2MDY5Xw/chimes.mp3',
-            newEntry: 'https://od.lk/d/MzRfMTAwMjE2MDY4Xw/ding.mp3',
-            logout: 'https://od.lk/d/MzRfMTAwMjE2MDcxXw/notify.mp3',
-            export: 'https://od.lk/d/MzRfMTAwMjE2MDcwXw/print-complete.mp3'
-        };
-
-        function playSound(type) {
-            const url = SOUND_URLS[type];
-            if (!url) return;
-            let audio = document.getElementById('audio-player');
-            if (!audio) {
-                audio = document.createElement('audio');
-                audio.id = 'audio-player';
-                document.body.appendChild(audio);
-            }
-            audio.pause();
-            audio.src = url;
-            audio.load();
-            audio.play().catch(e => console.warn("Audio blocked:", e));
+      // supabase vars
+      const supabaseUrl = 'https://lgajaitgqqznzlzjazxn.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYWphaXRncXF6bnpsemphenhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMDg2NzQsImV4cCI6MjA4NTg4NDY3NH0.Sm_Y4XiwCwjVtdvNEALNsDNY4EDGVI2KIWXkp3VdmfQ';
+      const sbClient = supabase.createClient(supabaseUrl, supabaseKey);
+      
+      //-- ADD SOUND URLS HERE, ENSURE IT HAS FILE NAME AT END OTHERWISE IT WON'T WORK --\\
+      const SOUND_URLS = {
+        logon: 'https://od.lk/d/MzRfMTAwMjE2MDY5Xw/chimes.mp3',
+        newEntry: 'https://od.lk/d/MzRfMTAwMjE2MDY4Xw/ding.mp3',
+        logout: 'https://od.lk/d/MzRfMTAwMjE2MDcxXw/notify.mp3',
+        export: 'https://od.lk/d/MzRfMTAwMjE2MDcwXw/print-complete.mp3',
+        delete: 'https://od.lk/s/MzRfMTAwMjgzNDMxXw/Speech_On%5B1%5D.wav',
+        update: 'https://od.lk/s/MzRfMTAwMjgzNDQyXw/Windows_Restore%5B1%5D.wav',
+        newCall: 'https://od.lk/s/MzRfMTAwMjg3MjUwXw/ttsmaker-file-2026-2-5-18-11-40.mp3',
+        callUpdated: 'https://od.lk/s/MzRfMTAwMjg3MjQ5Xw/2026-02-06-081155_137046.mp3'
+      };
+      
+      // global vars
+      let allCalls = []; 
+      let lastEvent = { type: null, id: null };
+      let currentView = { type: 'all', value: null };
+      let tagCounter = null;
+      let logs = [];
+      let sessionData = {
+        user: "",
+        rank: "",
+        role: "",
+        assignment: "",
+        rideAlong: false,
+        raName: "",
+        raBadge: "",
+        raRank: "",
+        signOff: null
+      };
+      const { jsPDF } = window.jspdf;
+      let userPerms = ""; // global var for perms
+      
+      //-- process command (for call monitoring) --\\ 
+      function processCmd() {
+        const input = document.getElementById('myInput');
+        const cmdStr = input.value.trim().toLowerCase();
+        const parts = cmdStr.split(' ');
+        const command = parts[0];
+        if (command === 'find') {
+          currentView = { type: 'unit', value: { unit: parts[1], date: parts[2] } };
+        } else if (command === 'callsfortoday') {
+          currentView = { type: 'today', value: new Date().toISOString().split('T')[0] };
+        } else if (command === 'callsforever') {
+          currentView = { type: 'all', value: null };
+        } else if (command === 'callsfor') {
+          currentView = { type: 'date', value: parts[1] };
+        }
+        
+        applyCurrentFilter();
+        input.value = '';
+      }
+      
+      function applyCurrentFilter() {
+        let filtered = [...allCalls];
+        if (currentView.type === 'today' || currentView.type === 'date') {
+          filtered = allCalls.filter(c => c.created_at.includes(currentView.value));
+        } else if (currentView.type === 'unit') {
+          filtered = allCalls.filter(c => c.unit.toLowerCase() === currentView.value.unit);
+          if (currentView.value.date) {
+            filtered = filtered.filter(c => c.created_at.includes(currentView.value.date));
+          }
+        }
+        
+        renderCallsTable(filtered);
+      }
+      
+      function renderCallsTable(dataArray) {
+        const table = document.getElementById('test-table');
+        while (table.rows.length > 1) { table.deleteRow(1); }
+        
+        dataArray.forEach((entry) => {
+          const row = table.insertRow(-1);
+          
+          if (entry.id === lastEvent.id) {
+            if (lastEvent.type === 'INSERT') row.id = "new-call";
+            if (lastEvent.type === 'UPDATE') row.id = "updated-call";
+          }
+        
+          row.innerHTML = `
+            <td>${entry.id.substring(0,8)}...</td>
+            <td style="font-size: 10px; color: #ffffff;">${entry.created_at.split('.')[0]}</td>
+            <td style="color: #ffffff;">${entry.tag || '--'}</td>
+            <td style="color: #ffffff;">${entry.unit}</td>
+            <td style="color: #ffffff;">${entry.call_type}</td>
+            <td style="color: #ffffff;">${entry.call_code || '--'}</td>
+            <td style="color: #ffffff;">${entry.location || '--'}</td>
+            <td style="color: #ffffff;">${entry.time_start || '--'}</td>
+            <td style="color: #ffffff;">${entry.time_end || '--'}</td>
+            <td style="color: #ffffff;">${entry.report_num || '--'}</td>
+            <td style="color: #00ff00; text-align: left;">${entry.notes || ''}</td>
+            <td style="color: #ffffff;">${entry.handle || '--'}</td>
+            <td style="color: #ffffff;">${entry.is_complete ? '[X]' : '[ ]'}</td>
+            <td style="color: #ffffff;">${entry.is_sam ? '[X]' : '[ ]'}</td>
+            <td style="color: #ffffff;">${entry.is_aero ? '[X]' : '[ ]'}</td>
+            <td style="color: #ffffff;">${entry.logged_by}</td>
+          `;
+        });
+        
+        setTimeout(() => {
+          lastEvent = { type: null, id: null };
+          const elNew = document.getElementById('new-call');
+          const elUpd = document.getElementById('updated-call');
+          if (elNew) elNew.removeAttribute('id');
+          if (elUpd) elUpd.removeAttribute('id');
+        }, 2500);
+      }
+      
+      async function setupLiveMonitor() {
+        const { data, error } = await sbClient
+          .from('activity_logs')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (!error) {
+          allCalls = data;
+          applyCurrentFilter();
         }
 
-        let tagCounter = null;
-        let logs = [];
-        let sessionData = {
-            user: "",
-            rank: "",
-            role: "",
-            assignment: "",
-            rideAlong: false,
-            raName: "",
-            raBadge: "",
-            raRank: "",
-            signOff: null
+        sbClient
+          .channel('schema-db-changes')
+          .on('postgres_changes', 
+            { event: 'INSERT', schema: 'public', table: 'activity_logs' }, 
+            (payload) => {
+                console.log('NEW CALL:', payload.new);
+                playSound('newCall');
+                allCalls.unshift(payload.new);
+                lastEvent = { type: 'INSERT', id: payload.new.id };
+                applyCurrentFilter();
+            }
+        )
+        .on('postgres_changes', 
+            { event: 'UPDATE', schema: 'public', table: 'activity_logs' }, 
+            (payload) => {
+                console.log('UPDATE RECEIVED:', payload.new);
+                playSound('callUpdated');
+                const idx = allCalls.findIndex(c => c.id === payload.new.id);
+                if (idx !== -1) {
+                    allCalls[idx] = payload.new;
+                    lastEvent = { type: 'UPDATE', id: payload.new.id };
+                    applyCurrentFilter();
+                }
+            }
+        )
+        .subscribe();
+      }
+      
+      //-- sound player --\\
+      function playSound(type) {
+        const url = SOUND_URLS[type];
+        if (!url) return;
+        let audio = document.getElementById('audio-player');
+        if (!audio) {
+          audio = document.createElement('audio');
+          audio.id = 'audio-player';
+          document.body.appendChild(audio);
+        }
+        audio.pause();
+        audio.src = url;
+        audio.load();
+        audio.play().catch(e => console.warn("Audio blocked:", e));
+      }
+      
+      //-- runs on login, uses uh supabase now --\\
+      async function doAuth() {
+        const email = document.getElementById('auth-email').value.toLowerCase();
+        const pass = document.getElementById('auth-pass').value;
+        const err = document.getElementById('auth-error');
+        const roleSelect = document.getElementById('user-role');
+        err.style.display = 'none';
+        try {
+          const { data, error } = await sbClient.from('users').select('Password, Permissions').eq('Email', email).single();
+          if (error || !data || data.Password !== pass) {
+            err.style.display = 'block';
+            err.innerText = "INVALID CREDENTIALS. ACCESS DENIED.";
+            return;
+          }
+          userPerms = data.Permissions;
+          document.getElementById('auth-box').style.display = 'none';
+          document.getElementById('login-box').style.display = 'block';
+          
+          if (userPerms === "DISPATCHER") {
+            roleSelect.value = "Dispatcher";
+            roleSelect.disabled = true;
+            toggleLogonFields();
+          } else if (userPerms === "DEPUTY") {
+            roleSelect.value = "Deputy";
+            roleSelect.disabled = true;
+            toggleLogonFields();
+          } else if (userPerms === "CALL") {
+            document.getElementById('login-box').style.display = 'none'; 
+            showCalls();
+          } else {
+            roleSelect.disabled = false;
+            toggleLogonFields();
+          }
+        } catch (e) {
+          console.error("Auth Error:", e);
+          err.style.display = 'block';
+          err.innerText = "DATABASE CONNECTION ERROR.";
+        }
+      }
+      
+      function showCalls() {
+        document.getElementById('top-bar-calls').style.display = 'block';
+        document.getElementById('main-app-calls').style.display = 'block';
+        document.body.style.backgroundColor = "black";
+        setupLiveMonitor();
+      }
+
+      function toggleLogonFields() {
+        const isDeputy = document.getElementById('user-role').value === "Deputy";
+        document.getElementById('tag-config-area').classList.toggle('hidden', isDeputy);
+        document.getElementById('ride-along-btn-area').classList.toggle('hidden', !isDeputy);
+        document.getElementById('rank-label').innerText = isDeputy ? "RANK (REQUIRED):" : "RANK:";
+      }
+      
+      function toggleRideAlong(show) {
+        sessionData.rideAlong = show;
+        document.getElementById('ride-along-inputs').classList.toggle('hidden', !show);
+        document.getElementById('ride-along-btn-area').classList.toggle('hidden', show);
+      }
+      
+      function setNow(id) {
+        const now = new Date();
+        document.getElementById(id).value = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
+      }
+      
+      function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+      }
+
+      function openUserDataModal() {
+        document.getElementById('edit-user-id').value = sessionData.user;
+        document.getElementById('edit-user-assignment').value = sessionData.assignment;
+        document.getElementById('edit-user-rank').value = sessionData.rank;
+        document.getElementById('user-data-overlay').style.display = 'flex';
+      }
+      
+      //-- USER DATA UPDATER --\\
+      function updateUserData() {
+        sessionData.user = document.getElementById('edit-user-id').value;
+        sessionData.assignment = document.getElementById('edit-user-assignment').value;
+        sessionData.rank = document.getElementById('edit-user-rank').value;
+        document.getElementById('stat-user').innerText = `${sessionData.rank} ${sessionData.user}`;
+        if (sessionData.role === "Deputy") {
+          document.getElementById('f-unit').value = sessionData.user;
+        }
+        closeModal('user-data-overlay');
+      }
+      
+      //-- CLR --\\
+      function clearInputFields() {
+        const fields = ['f-loc', 'f-notes', 'f-callcode', 'f-handle', 'f-report', 'f-start'];
+        fields.forEach(f => {
+          const el = document.getElementById(f);
+          if (el) el.value = "";
+        });
+        document.getElementById('f-end').value = "####";
+        ['f-cmplt', 'f-sam', 'f-aero'].forEach(c => {
+          const el = document.getElementById(c);
+          if (el) el.checked = false;
+        });
+      }
+      
+      //-- SIGN OFF HANDLER --\\
+      function confirmSignOff() {
+        const name = document.getElementById('sig-name').value;
+        const rank = document.getElementById('sig-rank').value;
+        if (!name || !rank) return alert("SIGNATURE NAME AND RANK ARE REQUIRED.");
+        sessionData.signOff = {
+          name,
+          rank,
+          bureau: document.getElementById('sig-bureau').value,
+          time: document.getElementById('sig-datetime').value
         };
-        const { jsPDF } = window.jspdf;
+        closeModal('modal-overlay');
+        exportPDF();
+      }
+      
+      //-- LOGIN HANDLER --\\
+      function doLogin() {
+        const userId = document.getElementById('user-id').value;
+        const userRank = document.getElementById('user-rank').value;
+        const userAsgn = document.getElementById('user-assignment').value;
+        const role = document.getElementById('user-role').value;
+        if (!userId) return alert("NAME / CALLSIGN IS REQUIRED.");
+        if (role === "Deputy" && !userRank) return alert("RANK IS REQUIRED FOR FIELD DEPUTIES.");
+        sessionData.user = userId;
+        sessionData.rank = userRank || "DISPATCHER";
+        sessionData.assignment = userAsgn || "N/A";
+        sessionData.role = role;
+        if (sessionData.rideAlong) {
+          sessionData.raName = document.getElementById('ra-name').value;
+          sessionData.raBadge = document.getElementById('ra-badge').value;
+          sessionData.raRank = document.getElementById('ra-rank').value;
+        }
+        const dOnly = document.querySelectorAll('.dispatch-only');
+        const depOnly = document.querySelectorAll('.deputy-only');
+        if (sessionData.role === "Deputy") {
+          tagCounter = "";
+          dOnly.forEach(el => el.classList.add('hidden'));
+          depOnly.forEach(el => el.classList.remove('hidden'));
+          document.getElementById('f-unit').value = sessionData.user;
+          document.getElementById('f-unit').readOnly = true;
+          document.getElementById('input-form').style.gridTemplateColumns = "100px 1fr 80px 80px 120px";
+          document.getElementById('field-notes').style.gridColumn = "span 5";
+          document.getElementById('log-head').innerHTML = `
+					<tr>
+						<th>UNIT</th>
+						<th>LOCATION</th>
+						<th>START</th>
+						<th>END</th>
+						<th>REPORT #</th>
+						<th>NARRATIVE</th>
+					</tr>`;
+        } else {
+          tagCounter = parseInt(document.getElementById('tag-start').value);
+          dOnly.forEach(el => el.classList.remove('hidden'));
+          depOnly.forEach(el => el.classList.add('hidden'));
+          document.getElementById('f-unit').readOnly = false;
+          document.getElementById('input-form').style.gridTemplateColumns = "repeat(6, 1fr)";
+          document.getElementById('field-notes').style.gridColumn = "span 3";
+          document.getElementById('log-head').innerHTML = `
+					<tr>
+						<th>TAG</th>
+						<th>UNIT</th>
+						<th>TYPE</th>
+						<th>CODE</th>
+						<th>LOCATION</th>
+						<th>START</th>
+						<th>END</th>
+						<th>NOTES</th>
+						<th>RESP</th>
+						<th>CMP</th>
+						<th>SAM</th>
+						<th>AERO</th>
+					</tr>`;
+        }
+        document.getElementById('stat-user').innerText = `${sessionData.rank} ${sessionData.user}`;
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('top-bar').style.display = 'flex';
+        document.getElementById('main-app').style.display = 'block';
+        const statusBtns = document.getElementById('status-btns');
+        if (sessionData.role === "Dispatcher") {
+          statusBtns.classList.add('hidden');
+        } else {
+          statusBtns.classList.remove('hidden');
+        }
+        playSound('logon');
+      }
+      //-- LOG OFF HANDLER --\\
+      function handleLogoff() {
+        if (confirm("LOGOFF TERMINAL?")) {
+          playSound('logout');
+          setTimeout(() => {
+            location.reload();
+          }, 1500);
+        }
+      }
+      
+      function generateDeputyTag() {
+        const now = new Date();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const yy = String(now.getFullYear()).slice(-2);
+        const rand = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+        return `${mm}${dd}${yy}-${rand}`;
+      }
+      
+      //-- ADD DAILY LOG ENTRY --\\
+      async function addEntry() {
+        let finalTag = null;
+        if (sessionData.role === "Dispatcher" && typeof tagCounter === 'number') {
+          finalTag = String(tagCounter);
+        } else {
+          finalTag = generateDeputyTag();
+        }
+        
+        const entryData = {
+          tag: finalTag, // Logged in database
+          unit: document.getElementById('f-unit').value,
+          call_type: sessionData.role === "Dispatcher" ? document.getElementById('f-type').value : "SIC",
+          call_code: sessionData.role === "Dispatcher" ? document.getElementById('f-callcode').value : "",
+          location: document.getElementById('f-loc').value,
+          time_start: document.getElementById('f-start').value || "0000",
+          time_end: document.getElementById('f-end').value,
+          report_num: sessionData.role === "Deputy" ? document.getElementById('f-report').value : "",
+          notes: document.getElementById('f-notes').value,
+          handle: sessionData.role === "Dispatcher" ? document.getElementById('f-handle').value : "",
+          is_complete: document.getElementById('f-cmplt')?.checked || false,
+          is_sam: document.getElementById('f-sam')?.checked || false,
+          is_aero: document.getElementById('f-aero')?.checked || false,
+          logged_by: sessionData.user
+        };
+        
+        const { error } = await sbClient.from('activity_logs').insert([entryData]);
+        
+        if (error) {
+          console.error("Error saving log:", error);
+          alert("Failed to save to database. Check console.");
+          return;
+        }
+        
+        const logForUI = {
+          ...entryData,
+          loc: entryData.location,
+          start: entryData.time_start,
+          end: entryData.time_end,
+          type: entryData.call_type,
+          callcode: entryData.call_code,
+          report: entryData.report_num,
+          cmplt: entryData.is_complete,
+          sam: entryData.is_sam,
+          aero: entryData.is_aero
+        };
+        
+        logs.unshift(logForUI);
+        
+        if (sessionData.role === "Dispatcher" && typeof tagCounter === 'number') {
+          tagCounter++;
+        }
+        
+        renderTable();
+        playSound('newEntry');
+        clearInputFields();
+      }
 
-        let userPerms = ""; // global var for perms
+      function renderTable() {
+        const tbody = document.getElementById('log-body');
+        const thead = document.getElementById('log-head');
+        tbody.innerHTML = "";
+        if (sessionData.role === "Deputy") {
+          thead.innerHTML = `
+					<tr>
+					  <th style="width:9ch">UNIT</th>
+						<th style="width:35ch">LOCATION</th>
+						<th style="width:6ch">STRT</th>
+						<th style="width:6ch">END</th>
+						<th style="width:12ch">URN</th>
+						<th>NARRATIVE</th>
+					</tr>`;
+          logs.forEach(log => {
+            const row = tbody.insertRow();
+            row.ondblclick = () => {
+              document.getElementById('edit-tag-num').value = log.tag;
+              loadTagForEdit();
+            };
+            if (log.notes == "DELETE") {
+              row.remove();
+              playSound('delete');
+            } else {
+              row.innerHTML = `
+							<td>${log.unit}</td>
+							<td>${log.loc}</td>
+							<td>${log.start}</td>
+							<td>${log.end}</td>
+							<td>${log.report || '--'}</td>
+							<td class="col-notes">${log.notes}</td>`;
+            }
+          });
+        } else {
+          thead.innerHTML = `
+					<tr>
+						<th>TAG</th>
+						<th>UNIT</th>
+						<th>TYP</th>
+						<th>CODE</th>
+						<th>LOCATION</th>
+						<th>STRT</th>
+						<th>END</th>
+						<th>NARRATIVE</th>
+						<th>RESP/HANDLE</th>
+						<th>CMP</th>
+						<th>SAM</th>
+						<th>AERO</th>
+					</tr>`;
+          logs.forEach(log => {
+            const row = tbody.insertRow();
+            row.ondblclick = () => {
+              document.getElementById('edit-tag-num').value = log.tag;
+              loadTagForEdit();
+            };
+            const displayHandle = log.handle ? log.handle : "";
+            if (log.notes == "DELETE") {
+              row.remove();
+              playSound('delete');
+            } else {
+              row.innerHTML = `
+							<td>${log.tag}</td>
+							<td>${log.unit}</td>
+							<td>${log.type}</td>
+							<td>${log.callcode}</td>
+							<td>${log.loc}</td>
+							<td>${log.start}</td>
+							<td>${log.end}</td>
+							<td class="col-notes">${log.notes}</td>
+							<td>${displayHandle}</td>
+							<td>${log.cmplt ? '✓' : ''}</td>
+							<td>${log.sam ? '✓' : ''}</td>
+							<td>${log.aero ? '✓' : ''}</td>`;
+            }
+          });
+        }
+      }
+      
+      //-- TAG LOAD UPDATER --\\
+      function loadTagForEdit() {
+        const searchTag = String(document.getElementById('edit-tag-num').value);
+        const entry = logs.find(l => String(l.tag) === searchTag);
+        
+        if (!entry) {
+          console.warn("No entry found for tag:", searchTag);
+          return;
+        }
+        
+        document.getElementById('f-unit').value = entry.unit || "";
+        document.getElementById('f-loc').value = entry.loc || "";
+        document.getElementById('f-start').value = entry.start || "";
+        document.getElementById('f-end').value = entry.end || "";
+        document.getElementById('f-notes').value = entry.notes || "";
+        
+        if (sessionData.role === "Deputy") {
+          const reportField = document.getElementById('f-report');
+          if (reportField) reportField.value = entry.report || "";
+        }
+        
+        // Dispatcher Specific Fields
+        if (sessionData.role === "Dispatcher") {
+          document.getElementById('f-type').value = entry.type || "";
+          document.getElementById('f-callcode').value = entry.callcode || "";
+          document.getElementById('f-code').value = entry.code || "";
+          document.getElementById('f-handle').value = entry.handle || "";
+          
+          if (document.getElementById('f-cmplt')) document.getElementById('f-cmplt').checked = !!entry.cmplt;
+          if (document.getElementById('f-sam')) document.getElementById('f-sam').checked = !!entry.sam;
+          if (document.getElementById('f-aero')) document.getElementById('f-aero').checked = !!entry.aero;
+        }
+      }
+      
+      //-- UPDATE UPON SUBMIT --\\
+      async function updateEntry() {
+        const tagRaw = document.getElementById('edit-tag-num').value;
+        const notesField = document.getElementById('f-notes');
+        
+        if (!tagRaw) {
+          alert("ERROR: NO TAG LOADED. DOUBLE-CLICK AN ENTRY FIRST.");
+          return;
+        }
+        
+        const tagValue = String(tagRaw).trim();
+        const noteContent = notesField.value.trim().toUpperCase();
+        
+        if (noteContent === "DELETE") {
+          const confirmDelete = confirm(`PERMANENTLY DELETE RECORD TAG: ${tagValue}?`);
+          if (confirmDelete) {
+            const { error: delError } = await sbClient
+                .from('activity_logs')
+                .delete()
+                .eq('tag', tagValue);
+                
+            if (delError) {
+              
+              alert("DELETE FAILED: " + delError.message);
+            } else {
+              const index = logs.findIndex(l => String(l.tag) === tagValue);
+              if (index !== -1) logs.splice(index, 1);
+              renderTable();
+              clearInputFields();
+              if (typeof playSound === 'function') playSound('delete');
+            }
+            return;
+          }
+        }
+        
+        const updatedData = {
+          unit: document.getElementById('f-unit').value,
+          location: document.getElementById('f-loc').value,
+          time_start: document.getElementById('f-start').value,
+          time_end: document.getElementById('f-end').value,
+          notes: notesField.value
+        };
+        
+        if (sessionData.role === "Deputy") {
+          updatedData.report_num = document.getElementById('f-report').value;
+        } 
+        
+        if (sessionData.role === "Dispatcher") {
+          updatedData.call_type = document.getElementById('f-type').value;
+          updatedData.call_code = document.getElementById('f-callcode').value;
+          updatedData.handle = document.getElementById('f-handle').value;
+          updatedData.is_complete = document.getElementById('f-cmplt')?.checked || false;
+          updatedData.is_sam = document.getElementById('f-sam')?.checked || false;
+          updatedData.is_aero = document.getElementById('f-aero')?.checked || false;
+        }
+        
+        const { data, error } = await sbClient
+          .from('activity_logs')
+          .update(updatedData)
+          .eq('tag', tagValue)
+          .select(); 
 
-        function doAuth() {
-            const email = document.getElementById('auth-email').value.toLowerCase();
-            const pass = document.getElementById('auth-pass').value;
-            const err = document.getElementById('auth-error');
-            const roleSelect = document.getElementById('user-role');
-
-            let authenticated = false;
+        if (error) {
+          console.error("Supabase Sync Error:", error);
+          alert("DATABASE SYNC FAILED: " + error.message);
+        } else if (!data || data.length === 0) {
+          console.error("No rows found matching tag:", tagValue);
+          alert(`SYNC ERROR: Record ${tagValue} not found in database. Check if the Tag column type is TEXT.`);
+        } else {
+          const index = logs.findIndex(l => String(l.tag) === tagValue);
+          if (index !== -1) {
+            const entry = logs[index];
+            entry.unit = updatedData.unit;
+            entry.loc = updatedData.location;
+            entry.start = updatedData.time_start;
+            entry.end = updatedData.time_end;
+            entry.notes = updatedData.notes;
             
-            //-- ADD MORE USERS HERE --\\
-            if (email === "admin@lasd.org" && pass === "admin") {
-                userPerms = "ADMIN";
-                authenticated = true;
-            } else if (email === "landrews@lasd.org" && pass === "36931") {
-                userPerms = "ADMIN";
-                authenticated = true;
-            } else if (email === "mrodriguez@lasd.org" && pass === "59085") {
-                userPerms = "DEPUTY";
-                authenticated = true;
-            } else if (email === "jwalker@lasd.org" && pass === "1234"){
-                userPerms = "DISPATCHER";
-                authenticated = true;
-            } else if (email === "dmejia@lasd.org" && pass == "19583"){
-                userPerms = "DEPUTY";
-                authenticated = true;
-            } else if (email === "bhodges@lasd.org" && pass == "942"){
-                userPerms = "DEPUTY";
-                authenticated = true;
-            } else if (email === "bguzman@lasd.org" && pass == "8270"){
-                userPerms = "DEPUTY";
-                authenticated = true;
-            } else if (email === "chernandez@lasd.org" && pass == "62200"){
-                userPerms = "DEPUTY";
-                authenticated = true;
-            }
-
-            if (authenticated) {
-                document.getElementById('auth-box').style.display = 'none';
-                document.getElementById('login-box').style.display = 'block';
-
-                if (userPerms === "DISPATCHER") {
-                    roleSelect.value = "Dispatcher";
-                    roleSelect.disabled = true;
-                } else if (userPerms === "DEPUTY") {
-                    roleSelect.value = "Deputy";
-                    roleSelect.disabled = true;
-                } else {
-                    roleSelect.disabled = false; // for admin to choose wtv
-                }
-                toggleLogonFields();
-            } else {
-                err.style.display = 'block';
-            }
-        }
-
-        function toggleLogonFields() {
-            const isDeputy = document.getElementById('user-role').value === "Deputy";
-            document.getElementById('tag-config-area').classList.toggle('hidden', isDeputy);
-            document.getElementById('ride-along-btn-area').classList.toggle('hidden', !isDeputy);
-            document.getElementById('rank-label').innerText = isDeputy ? "RANK (REQUIRED):" : "RANK:";
-        }
-
-        function toggleRideAlong(show) {
-            sessionData.rideAlong = show;
-            document.getElementById('ride-along-inputs').classList.toggle('hidden', !show);
-            document.getElementById('ride-along-btn-area').classList.toggle('hidden', show);
-        }
-
-        function setNow(id) {
-            const now = new Date();
-            document.getElementById(id).value = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
-        }
-        
-        
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        function openUserDataModal() {
-            document.getElementById('edit-user-id').value = sessionData.user;
-            document.getElementById('edit-user-assignment').value = sessionData.assignment;
-            document.getElementById('edit-user-rank').value = sessionData.rank;
-            document.getElementById('user-data-overlay').style.display = 'flex';
-        }
-        
-        //-- USER DATA UPDATER --\\
-        function updateUserData() {
-            sessionData.user = document.getElementById('edit-user-id').value;
-            sessionData.assignment = document.getElementById('edit-user-assignment').value;
-            sessionData.rank = document.getElementById('edit-user-rank').value;
-
-            document.getElementById('stat-user').innerText = `${sessionData.rank} ${sessionData.user}`;
             if (sessionData.role === "Deputy") {
-                document.getElementById('f-unit').value = sessionData.user;
+              entry.report = updatedData.report_num;
             }
-            closeModal('user-data-overlay');
+            
+            if (sessionData.role === "Dispatcher") {
+              entry.type = updatedData.call_type;
+              entry.callcode = updatedData.call_code;
+              entry.handle = updatedData.handle;
+              entry.cmplt = updatedData.is_complete;
+              entry.sam = updatedData.is_sam;
+              entry.aero = updatedData.is_aero;
+            }
+          }
+          
+          if (typeof playSound === 'function') playSound('update');
+          renderTable();
+          clearInputFields();
+          console.log(`Success: Tag ${tagValue} updated.`, data[0]);
         }
-        
-        //-- CLR --\\
-        function clearInputFields() {
-            const fields = ['f-loc', 'f-notes', 'f-callcode', 'f-handle', 'f-report', 'f-start'];
-            fields.forEach(f => {
-                const el = document.getElementById(f);
-                if (el) el.value = "";
-            });
-            document.getElementById('f-end').value = "####";
-            ['f-cmplt', 'f-sam', 'f-aero'].forEach(c => {
-                const el = document.getElementById(c);
-                if (el) el.checked = false;
-            });
-        }
-        
-        //-- SIGN OFF HANDLER --\\
-        function confirmSignOff() {
-            const name = document.getElementById('sig-name').value;
-            const rank = document.getElementById('sig-rank').value;
-            if (!name || !rank) return alert("SIGNATURE NAME AND RANK ARE REQUIRED.");
-            sessionData.signOff = {
-                name,
-                rank,
-                bureau: document.getElementById('sig-bureau').value,
-                time: document.getElementById('sig-datetime').value
-            };
-            closeModal('modal-overlay');
+      }
+      
+      //-- FOR DEP LOGO --\\
+      function triggerPrintFlow() {
+        const logoUrl = 'https://upload.wikimedia.org/wikipedia/commons/4/45/Badge_of_the_Sheriff_of_Los_Angeles_County.png';
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = logoUrl;
+        img.onload = function() {
+          window.lasdLogoImg = img;
+          if (sessionData.role === "Deputy") {
+            document.getElementById('sig-datetime').value = new Date().toLocaleString();
+            document.getElementById('modal-overlay').style.display = 'flex';
+          } else {
             exportPDF();
+          }
+        };
+      }
+      
+      //-- EXPORT TO PDF HANDLE --\\
+      function exportPDF() {
+        playSound('export');
+        const doc = new jsPDF({
+          orientation: "landscape"
+        });
+        const totalPagesExp = "{total_pages_count_string}";
+        const date = new Date().toLocaleDateString();
+        const addHeader = (data) => {
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageNum = doc.internal.getNumberOfPages();
+          if (sessionData.role === "Deputy") {
+            if (window.lasdLogoImg) {
+              doc.addImage(window.lasdLogoImg, 'PNG', 10, 5, 18, 22);
+            }
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text(["DEPUTY'S DAILY ACTIVITY LOG", `LOGS FOR ${date}`], 32, 14);
+          } else {
+            doc.setFont("courier", "bold");
+            doc.setFontSize(12);
+            doc.text(`DISPATCH CALL LOGS - ${date}`, 14, 12);
+          }
+          doc.setFontSize(10);
+          doc.text(`Page ${pageNum} of ${totalPagesExp}`, pageWidth - 45, 14);
+        };
+        if (sessionData.role === "Deputy") {
+          // Deputy Info Header
+          doc.autoTable({
+            startY: 28,
+            head: [
+              ['REPORTING OFFICER', 'RANK', 'ASSIGNMENT', 'PARTNER', 'BADGE #', 'DATE']
+            ],
+            body: [
+              [sessionData.user, sessionData.rank, sessionData.assignment, sessionData.rideAlong ? sessionData.raName : "NONE", sessionData.rideAlong ? sessionData.raBadge : "N/A", date]
+            ],
+            theme: 'grid',
+            headStyles: {
+              fillColor: [128, 128, 128]
+            },
+            styles: {
+              font: 'courier'
+            },
+            didDrawPage: addHeader
+          });
+          // Deputy Activity Table
+          const tableData = logs.slice().reverse().map(l => [l.unit, l.loc, l.start, l.end, l.report || "N/A", l.notes]);
+          doc.autoTable({
+            startY: doc.lastAutoTable.finalY + 5,
+            head: [ ['UNIT', 'LOCATION', 'START', 'END', 'REPORT #', 'NOTES'] ],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [128, 128, 128] },
+            styles: {
+              font: 'courier',
+              fontSize: 8
+            },
+            columnStyles: {
+              0: { cellWidth: 20 }, // Unit
+              1: { cellWidth: 70 }, // Location 
+              2: { cellWidth: 15 }, // Start
+              3: { cellWidth: 15 }, // End
+              4: { cellWidth: 30 }, // URN, OR RPT #
+              5: { cellWidth: 'auto' } // Narrative
+            },
+            didDrawPage: addHeader
+          });
+        } else {
+          // Dispatcher Activity Table
+          const tableData = logs.slice().reverse().map(l => [
+            l.tag, l.unit, l.type, l.callcode, l.loc, l.start, l.end, l.notes, l.handle || "", l.cmplt ? 'Y' : 'N', l.sam ? 'Y' : 'N', l.aero ? 'Y' : 'N'
+          ]);
+          doc.autoTable({
+            startY: 25,
+            head: [
+              ['TAG', 'UNIT', 'TYP', 'CODE', 'LOCATION', 'STRT', 'END', 'NARRATIVE', 'RESP/HANDLE', 'CMP', 'SAM', 'AERO']
+            ],
+            body: tableData,
+            theme: 'grid',
+            headStyles: {
+              fillColor: [128, 128, 128]
+            },
+            styles: {
+              font: 'courier',
+              fontSize: 7,
+              overflow: 'linebreak'
+            },
+            columnStyles: {
+              0: { cellWidth: 12 }, // Tag
+              1: { cellWidth: 18 }, // Unit
+              2: { cellWidth: 15 }, // Type
+              3: { cellWidth: 12 }, // Code
+              4: { cellWidth: 60 }, // Location 
+              5: { cellWidth: 12 }, // Strt
+              6: { cellWidth: 12 }, // End
+              7: { cellWidth: 'auto' }, // Narrative
+              8: { cellWidth: 59 }, // RESP/HANDLE 
+              9: { cellWidth: 8 }, // CMP
+              10: { cellWidth: 8 }, // SAM
+              11: { cellWidth: 9 } // AERO
+            },
+            didDrawPage: addHeader
+          });
         }
-        
-        //-- LOGIN HANDLER --\\
-        function doLogin() {
-            const userId = document.getElementById('user-id').value;
-            const userRank = document.getElementById('user-rank').value;
-            const userAsgn = document.getElementById('user-assignment').value;
-            const role = document.getElementById('user-role').value;
-
-            if (!userId) return alert("NAME / CALLSIGN IS REQUIRED.");
-            if (role === "Deputy" && !userRank) return alert("RANK IS REQUIRED FOR FIELD DEPUTIES.");
-
-            sessionData.user = userId;
-            sessionData.rank = userRank || "DISPATCHER";
-            sessionData.assignment = userAsgn || "N/A";
-            sessionData.role = role;
-
-            if (sessionData.rideAlong) {
-                sessionData.raName = document.getElementById('ra-name').value;
-                sessionData.raBadge = document.getElementById('ra-badge').value;
-                sessionData.raRank = document.getElementById('ra-rank').value;
-            }
-
-            const dOnly = document.querySelectorAll('.dispatch-only');
-            const depOnly = document.querySelectorAll('.deputy-only');
-
-            if (sessionData.role === "Deputy") {
-                tagCounter = "";
-                dOnly.forEach(el => el.classList.add('hidden'));
-                depOnly.forEach(el => el.classList.remove('hidden'));
-                document.getElementById('f-unit').value = sessionData.user;
-                document.getElementById('f-unit').readOnly = true;
-                document.getElementById('input-form').style.gridTemplateColumns = "100px 1fr 80px 80px 120px";
-                document.getElementById('field-notes').style.gridColumn = "span 5";
-                document.getElementById('log-head').innerHTML = `<tr><th>UNIT</th><th>LOCATION</th><th>START</th><th>END</th><th>REPORT #</th><th>NARRATIVE</th></tr>`;
-            } else {
-                tagCounter = parseInt(document.getElementById('tag-start').value);
-                dOnly.forEach(el => el.classList.remove('hidden'));
-                depOnly.forEach(el => el.classList.add('hidden'));
-                document.getElementById('f-unit').readOnly = false;
-                document.getElementById('input-form').style.gridTemplateColumns = "repeat(6, 1fr)";
-                document.getElementById('field-notes').style.gridColumn = "span 3";
-                document.getElementById('log-head').innerHTML = `<tr><th>TAG</th><th>UNIT</th><th>TYPE</th><th>CODE</th><th>LOCATION</th><th>START</th><th>END</th><th>NOTES</th><th>RESP</th><th>CMP</th><th>SAM</th><th>AERO</th></tr>`;
-            }
-
-            document.getElementById('stat-user').innerText = `${sessionData.rank} ${sessionData.user}`;
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('top-bar').style.display = 'flex';
-            document.getElementById('main-app').style.display = 'block';
-
-            const statusBtns = document.getElementById('status-btns');
-            if (sessionData.role === "Dispatcher") {
-                statusBtns.classList.add('hidden');
-            } else {
-                statusBtns.classList.remove('hidden');
-            }
-
-            playSound('logon');
+        // Validation Sign-off for Deputy
+        if (sessionData.signOff) {
+          doc.autoTable({
+            startY: doc.lastAutoTable.finalY + 10,
+            head: [
+              ['OFFICIAL VALIDATION / SIGN-OFF', 'RANK', 'BUREAU / STATION', 'TIMESTAMP']
+            ],
+            body: [
+              [
+                sessionData.signOff.name.toUpperCase(),
+                sessionData.signOff.rank.toUpperCase(),
+                sessionData.signOff.bureau.toUpperCase(),
+                sessionData.signOff.time
+              ]
+            ],
+            theme: 'grid',
+            headStyles: {
+              fillColor: [0, 0, 128]
+            },
+            styles: {
+              font: 'courier',
+              fontSize: 9,
+              cellPadding: 3
+            },
+            didDrawPage: addHeader
+          });
         }
-        
-        //-- LOG OFF HANDLER --\\
-        function handleLogoff() {
-            if (confirm("LOGOFF TERMINAL?")) {
-                playSound('logout');
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            }
+        if (typeof doc.putTotalPages === 'function') {
+          doc.putTotalPages(totalPagesExp);
         }
-        
-        //-- ADD DAILY LOG ENTRY --\\
-        function addEntry() {
-            const entry = {
-                tag: tagCounter,
-                unit: document.getElementById('f-unit').value,
-                type: sessionData.role === "Dispatcher" ? document.getElementById('f-type').value : "SIC",
-                callcode: sessionData.role === "Dispatcher" ? document.getElementById('f-callcode').value : "",
-                loc: document.getElementById('f-loc').value,
-                start: document.getElementById('f-start').value || "0000",
-                end: document.getElementById('f-end').value,
-                report: sessionData.role === "Deputy" ? document.getElementById('f-report').value : "",
-                notes: document.getElementById('f-notes').value,
-                code: sessionData.role === "Dispatcher" ? document.getElementById('f-code').value : "NONE",
-                handle: sessionData.role === "Dispatcher" ? document.getElementById('f-handle').value : "",
-                cmplt: document.getElementById('f-cmplt')?.checked || false,
-                sam: document.getElementById('f-sam')?.checked || false,
-                aero: document.getElementById('f-aero')?.checked || false
-            };
-            logs.unshift(entry);
-            if (typeof tagCounter === 'number') {
-                tagCounter++;
-            }
-            renderTable();
-            playSound('newEntry');
-            clearInputFields();
+        doc.save(`LASD_LOG_${sessionData.user}_${date.replace(/\//g, '-')}.pdf`);
+      }
+      
+      //-- Quick Status Buttons Handle --\\
+      function quickStatus(code) {
+        currentQSCode = code;
+        document.getElementById('qs-title').innerText = `QUICK STATUS: ${code}`;
+        document.getElementById('qs-loc').value = document.getElementById('f-loc').value;
+        document.getElementById('qs-notes').value = "";
+        const locContainer = document.getElementById('qs-loc-container');
+        if (code === '10-6' || code === '10-7' || code === '10-8') {
+          locContainer.style.display = 'none';
+        } else {
+          locContainer.style.display = 'block';
         }
-
-        function renderTable() {
-            const tbody = document.getElementById('log-body');
-            const thead = document.getElementById('log-head');
-            tbody.innerHTML = "";
-
-            if (sessionData.role === "Deputy") {
-                thead.innerHTML = `<tr><th style="width:9ch">UNIT</th><th style="width:35ch">LOCATION</th><th style="width:6ch">STRT</th><th style="width:6ch">END</th><th style="width:12ch">URN</th><th>NARRATIVE</th></tr>`;
-                logs.forEach(log => {
-                    const row = tbody.insertRow();
-                    row.ondblclick = () => {
-                        document.getElementById('edit-tag-num').value = log.tag;
-                        loadTagForEdit();
-                    };
-                    row.innerHTML = `<td>${log.unit}</td><td>${log.loc}</td><td>${log.start}</td><td>${log.end}</td><td>${log.report || '--'}</td><td class="col-notes">${log.notes}</td>`;
-                });
-            } else {
-                thead.innerHTML = `<tr><th>TAG</th><th>UNIT</th><th>TYP</th><th>CODE</th><th>LOCATION</th><th>STRT</th><th>END</th><th>NARRATIVE</th><th>RESP/HANDLE</th><th>CMP</th><th>SAM</th><th>AERO</th></tr>`;
-                logs.forEach(log => {
-                    const row = tbody.insertRow();
-                    row.ondblclick = () => {
-                        document.getElementById('edit-tag-num').value = log.tag;
-                        loadTagForEdit();
-                    };
-
-                    const displayHandle = log.handle ? log.handle : "";
-
-                    row.innerHTML = `<td>${log.tag}</td><td>${log.unit}</td><td>${log.type}</td><td>${log.callcode}</td><td>${log.loc}</td><td>${log.start}</td><td>${log.end}</td><td class="col-notes">${log.notes}</td><td>${displayHandle}</td><td>${log.cmplt ? '✓' : ''}</td><td>${log.sam ? '✓' : ''}</td><td>${log.aero ? '✓' : ''}</td>`;
-                });
-            }
-        }
-        
-        //-- TAG LOAD UPDATER --\\
-        function loadTagForEdit() {
-            const entry = logs.find(l => String(l.tag) === String(document.getElementById('edit-tag-num').value));
-            if (!entry) return;
-
-            document.getElementById('f-unit').value = entry.unit;
-            document.getElementById('f-loc').value = entry.loc;
-            document.getElementById('f-start').value = entry.start;
-            document.getElementById('f-end').value = entry.end;
-            document.getElementById('f-notes').value = entry.notes;
-
-            if (sessionData.role === "Dispatcher") {
-                document.getElementById('f-type').value = entry.type;
-                document.getElementById('f-callcode').value = entry.callcode;
-                document.getElementById('f-code').value = entry.code;
-                document.getElementById('f-handle').value = entry.handle;
-                if (document.getElementById('f-cmplt')) document.getElementById('f-cmplt').checked = entry.cmplt;
-                if (document.getElementById('f-sam')) document.getElementById('f-sam').checked = entry.sam;
-                if (document.getElementById('f-aero')) document.getElementById('f-aero').checked = entry.aero;
-            }
-        }
-        
-        //-- UPDATE UPON SUBMIT --\\
-        function updateEntry() {
-            const index = logs.findIndex(l => String(l.tag) === String(document.getElementById('edit-tag-num').value));
-            if (index === -1) return;
-
-            logs[index].unit = document.getElementById('f-unit').value;
-            logs[index].loc = document.getElementById('f-loc').value;
-            logs[index].start = document.getElementById('f-start').value;
-            logs[index].end = document.getElementById('f-end').value;
-            logs[index].notes = document.getElementById('f-notes').value;
-
-            if (sessionData.role === "Dispatcher") {
-                logs[index].type = document.getElementById('f-type').value;
-                logs[index].callcode = document.getElementById('f-callcode').value;
-                logs[index].code = document.getElementById('f-code').value;
-                logs[index].handle = document.getElementById('f-handle').value;
-                logs[index].cmplt = document.getElementById('f-cmplt')?.checked || false;
-                logs[index].sam = document.getElementById('f-sam')?.checked || false;
-                logs[index].aero = document.getElementById('f-aero')?.checked || false;
-            }
-
-            renderTable();
-            clearInputFields();
-        }
-
-        //-- FOR DEP LOGO --\\
-        function triggerPrintFlow() {
-            const logoUrl = 'https://upload.wikimedia.org/wikipedia/commons/4/45/Badge_of_the_Sheriff_of_Los_Angeles_County.png';
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.src = logoUrl;
-            img.onload = function() {
-                window.lasdLogoImg = img;
-                if (sessionData.role === "Deputy") {
-                    document.getElementById('sig-datetime').value = new Date().toLocaleString();
-                    document.getElementById('modal-overlay').style.display = 'flex';
-                } else {
-                    exportPDF();
-                }
-            };
-        }
-        
-        //-- EXPORT TO PDF HANDLE --\\
-        function exportPDF() {
-            playSound('export');
-            const doc = new jsPDF({
-                orientation: "landscape"
-            });
-            const totalPagesExp = "{total_pages_count_string}";
-            const date = new Date().toLocaleDateString();
-
-            const addHeader = (data) => {
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const pageNum = doc.internal.getNumberOfPages();
-                if (sessionData.role === "Deputy") {
-                    if (window.lasdLogoImg) {
-                        doc.addImage(window.lasdLogoImg, 'PNG', 10, 5, 18, 22);
-                    }
-                    doc.setFont("helvetica", "bold");
-                    doc.setFontSize(16);
-                    doc.text(["DEPUTY'S DAILY ACTIVITY LOG", `LOGS FOR ${date}`], 32, 14);
-                } else {
-                    doc.setFont("courier", "bold");
-                    doc.setFontSize(12);
-                    doc.text(`DISPATCH CALL LOGS - ${date}`, 14, 12);
-                }
-                doc.setFontSize(10);
-                doc.text(`Page ${pageNum} of ${totalPagesExp}`, pageWidth - 45, 14);
-            };
-
-            if (sessionData.role === "Deputy") {
-                // Deputy Info Header
-                doc.autoTable({
-                    startY: 28,
-                    head: [ ['REPORTING OFFICER', 'RANK', 'ASSIGNMENT', 'PARTNER', 'BADGE #', 'DATE'] ],
-                    body: [
-                        [sessionData.user, sessionData.rank, sessionData.assignment, sessionData.rideAlong ? sessionData.raName : "NONE", sessionData.rideAlong ? sessionData.raBadge : "N/A", date]
-                    ],
-                    theme: 'grid',
-                    headStyles: { fillColor: [128, 128, 128]},
-                    styles: { font: 'courier' },
-                    didDrawPage: addHeader
-                });
-
-                // Deputy Activity Table
-                const tableData = logs.slice().reverse().map(l => [l.unit, l.loc, l.start, l.end, l.report || "N/A", l.notes]);
-                doc.autoTable({
-                    startY: doc.lastAutoTable.finalY + 5,
-                    head: [
-                        ['UNIT', 'LOCATION', 'START', 'END', 'REPORT #', 'NOTES']
-                    ],
-                    body: tableData,
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [128, 128, 128]
-                    },
-                    styles: {
-                        font: 'courier',
-                        fontSize: 8
-                    },
-                    columnStyles: {
-                        0: {
-                            cellWidth: 20
-                        }, // Unit
-                        1: { cellWidth: 70 }, // Location 
-                        2: { cellWidth: 15 }, // Start
-                        3: { cellWidth: 15 }, // End
-                        4: { cellWidth: 30 }, // URN
-                        5: { cellWidth: 'auto' } // Narrative
-                    },
-                    didDrawPage: addHeader
-                });
-            } else {
-                // Dispatcher Activity Table
-                const tableData = logs.slice().reverse().map(l => [
-                    l.tag, l.unit, l.type, l.callcode, l.loc, l.start, l.end, l.notes, l.handle || "", l.cmplt ? 'Y' : 'N', l.sam ? 'Y' : 'N', l.aero ? 'Y' : 'N'
-                ]);
-
-                doc.autoTable({
-                    startY: 25,
-                    head: [
-                        ['TAG', 'UNIT', 'TYP', 'CODE', 'LOCATION', 'STRT', 'END', 'NARRATIVE', 'RESP/HANDLE', 'CMP', 'SAM', 'AERO']
-                    ],
-                    body: tableData,
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [128, 128, 128]
-                    },
-                    styles: {
-                        font: 'courier',
-                        fontSize: 7,
-                        overflow: 'linebreak'
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 12 }, // Tag
-                        1: { cellWidth: 18 }, // Unit
-                        2: { cellWidth: 15 }, // Type
-                        3: { cellWidth: 12 }, // Code
-                        4: { cellWidth: 60 }, // Location 
-                        5: { cellWidth: 12 }, // Strt
-                        6: { cellWidth: 12 }, // End
-                        7: { cellWidth: 'auto' }, // Narrative
-                        8: { cellWidth: 59 }, // RESP/HANDLE 
-                        9: { cellWidth: 8 }, // CMP
-                        10: { cellWidth: 8 }, // SAM
-                        11: {  cellWidth: 9 } // AERO
-                    },
-                    didDrawPage: addHeader
-                });
-            }
-
-            // Validation Sign-off for Deputy
-            if (sessionData.signOff) {
-                doc.autoTable({
-                    startY: doc.lastAutoTable.finalY + 10,
-                    head: [
-                        ['OFFICIAL VALIDATION / SIGN-OFF', 'RANK', 'BUREAU / STATION', 'TIMESTAMP']
-                    ],
-                    body: [
-                        [
-                            sessionData.signOff.name.toUpperCase(),
-                            sessionData.signOff.rank.toUpperCase(),
-                            sessionData.signOff.bureau.toUpperCase(),
-                            sessionData.signOff.time
-                        ]
-                    ],
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [0, 0, 128]
-                    },
-                    styles: {
-                        font: 'courier',
-                        fontSize: 9,
-                        cellPadding: 3
-                    },
-                    didDrawPage: addHeader
-                });
-            }
-
-            if (typeof doc.putTotalPages === 'function') {
-                doc.putTotalPages(totalPagesExp);
-            }
-            doc.save(`LASD_LOG_${sessionData.user}_${date.replace(/\//g, '-')}.pdf`);
-        }
-        
-        //-- Quick Status Buttons Handle --\\
-        function quickStatus(code) {
-            currentQSCode = code;
-            document.getElementById('qs-title').innerText = `QUICK STATUS: ${code}`;
-
-            document.getElementById('qs-loc').value = document.getElementById('f-loc').value;
-            document.getElementById('qs-notes').value = "";
-
-            const locContainer = document.getElementById('qs-loc-container');
-            if (code === '10-6' || code === '10-7' || code === '10-8') {
-                locContainer.style.display = 'none';
-            } else {
-                locContainer.style.display = 'block';
-            }
-
-            document.getElementById('quick-status-overlay').style.display = 'flex';
-            document.getElementById('qs-notes').focus();
-        }
-
-        //-- Submit Quck Status per Model --\\
-        function submitQuickStatus() {
-            const loc = document.getElementById('qs-loc').value;
-            const notes = document.getElementById('qs-notes').value;
-
-            setNow('f-start');
-            document.getElementById('f-end').value = (currentQSCode === '10-8') ?
-                new Date().getHours().toString().padStart(2, '0') + new Date().getMinutes().toString().padStart(2, '0') : "####";
-
-            document.getElementById('f-loc').value = loc;
-            document.getElementById('f-notes').value = `${currentQSCode}${notes ? ' - ' + notes : ''}`;
-            closeModal('quick-status-overlay');
-            addEntry();
-        }
+        document.getElementById('quick-status-overlay').style.display = 'flex';
+        document.getElementById('qs-notes').focus();
+      }
+      
+      //-- Submit Quck Status per Model --\\
+      function submitQuickStatus() {
+        const loc = document.getElementById('qs-loc').value;
+        const notes = document.getElementById('qs-notes').value;
+        setNow('f-start');
+        document.getElementById('f-end').value = (currentQSCode === '10-8') ? new Date().getHours().toString().padStart(2, '0') + new Date().getMinutes().toString().padStart(2, '0') : "####";
+        document.getElementById('f-loc').value = loc;
+        document.getElementById('f-notes').value = `${currentQSCode}${notes ? ' - ' + notes : ''}`;
+        closeModal('quick-status-overlay');
+        addEntry();
+      }
+      
     </script>
-</body>
-
+  </body>
 </html>
